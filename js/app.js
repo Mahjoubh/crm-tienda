@@ -419,6 +419,169 @@ class CRMApp {
             }
         });
     }
+    // ================= PEDIDOS =================
+    async loadOrders() {
+        const content = document.querySelector('.content');
+        content.innerHTML = `
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-shopping-cart"></i> Gestión de Pedidos</h3>
+                    <button class="btn btn-primary" id="btn-new-order"><i class="fas fa-plus"></i> Nuevo Pedido</button>
+                </div>
+                <div class="card-body">
+                    <div id="orders-container"><p>Cargando pedidos...</p></div>
+                </div>
+            </div>
+
+            <div class="modal-overlay" id="order-modal">
+                <div class="modal">
+                    <h3>Nuevo Pedido</h3>
+                    <form id="order-form">
+                        <label>Cliente</label>
+                        <select id="order-contact" required><option value="">Cargando...</option></select>
+                        <label>Producto</label>
+                        <select id="order-product" required><option value="">Cargando...</option></select>
+                        <label>Cantidad</label>
+                        <input type="number" id="order-quantity" min="1" value="1" required>
+                        <div class="order-total">Total: <strong id="order-total">0,00 €</strong></div>
+                        <div class="modal-actions">
+                            <button type="button" class="btn btn-secondary" id="btn-cancel-order">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Guardar Pedido</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+        this.renderOrders();
+        this.loadOrderOptions();
+        this.setupOrderEvents();
+    }
+
+    async renderOrders() {
+        const container = document.getElementById('orders-container');
+        const { data, error } = await supabase
+            .from('orders')
+            .select('*, contacts(name)')
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            container.innerHTML = '<p class="error">❌ Error: ' + error.message + '</p>';
+            return;
+        }
+
+        if (!data || data.length === 0) {
+            container.innerHTML = '<p>No hay pedidos. Crea el primero con "Nuevo Pedido".</p>';
+            return;
+        }
+
+        const statusLabels = { pending: 'Pendiente', processing: 'Procesando', shipped: 'Enviado', delivered: 'Entregado', cancelled: 'Cancelado' };
+
+        container.innerHTML = `
+            <table class="data-table">
+                <thead>
+                    <tr><th>Nº Pedido</th><th>Cliente</th><th>Total</th><th>Estado</th><th>Fecha</th></tr>
+                </thead>
+                <tbody>
+                    ${data.map(o => `
+                        <tr>
+                            <td><strong>${o.order_number}</strong></td>
+                            <td>${o.contacts ? o.contacts.name : '—'}</td>
+                            <td><strong>${this.formatCurrency(parseFloat(o.total))}</strong></td>
+                            <td>
+                                <select class="status-select" data-id="${o.id}">
+                                    ${Object.keys(statusLabels).map(s =>
+                                        `<option value="${s}" ${s === o.status ? 'selected' : ''}>${statusLabels[s]}</option>`
+                                    ).join('')}
+                                </select>
+                            </td>
+                            <td>${this.formatDate(o.created_at)}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+
+        container.querySelectorAll('.status-select').forEach(select => {
+            select.addEventListener('change', async (e) => {
+                const { error } = await supabase
+                    .from('orders')
+                    .update({ status: e.target.value })
+                    .eq('id', e.target.dataset.id);
+                if (error) alert('Error al actualizar: ' + error.message);
+            });
+        });
+    }
+
+    async loadOrderOptions() {
+        const contactSelect = document.getElementById('order-contact');
+        const { data: contacts } = await supabase.from('contacts').select('id, name').order('name');
+        if (contacts) {
+            contactSelect.innerHTML = '<option value="">-- Selecciona cliente --</option>' +
+                contacts.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        }
+
+        const productSelect = document.getElementById('order-product');
+        const { data: products } = await supabase.from('products').select('id, name, price, stock').order('name');
+        if (products) {
+            this.productsCache = products;
+            productSelect.innerHTML = '<option value="">-- Selecciona producto --</option>' +
+                products.map(p => `<option value="${p.id}">${p.name} — ${this.formatCurrency(parseFloat(p.price))}</option>`).join('');
+        }
+    }
+
+    setupOrderEvents() {
+        const modal = document.getElementById('order-modal');
+        document.getElementById('btn-new-order').addEventListener('click', () => modal.style.display = 'flex');
+        document.getElementById('btn-cancel-order').addEventListener('click', () => modal.style.display = 'none');
+
+        // Calcular total automáticamente
+        const updateTotal = () => {
+            const productId = document.getElementById('order-product').value;
+            const qty = parseInt(document.getElementById('order-quantity').value) || 0;
+            const product = (this.productsCache || []).find(p => p.id === productId);
+            document.getElementById('order-total').textContent =
+                this.formatCurrency(product ? parseFloat(product.price) * qty : 0);
+        };
+        document.getElementById('order-product').addEventListener('change', updateTotal);
+        document.getElementById('order-quantity').addEventListener('input', updateTotal);
+
+        // Guardar pedido
+        document.getElementById('order-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const productId = document.getElementById('order-product').value;
+            const qty = parseInt(document.getElementById('order-quantity').value);
+            const product = (this.productsCache || []).find(p => p.id === productId);
+
+            if (!product) { alert('Selecciona un producto'); return; }
+
+            const total = parseFloat(product.price) * qty;
+
+            const { data: order, error } = await supabase.from('orders').insert([{
+                contact_id: document.getElementById('order-contact').value,
+                order_number: 'ORD-' + Date.now().toString().slice(-6),
+                status: 'pending',
+                total: total
+            }]).select().single();
+
+            if (error) { alert('❌ Error al crear pedido: ' + error.message); return; }
+
+            await supabase.from('order_items').insert([{
+                order_id: order.id,
+                product_id: productId,
+                quantity: qty,
+                unit_price: parseFloat(product.price)
+            }]);
+
+            // Descontar stock automáticamente
+            await supabase.from('products')
+                .update({ stock: Math.max(0, product.stock - qty) })
+                .eq('id', productId);
+
+            modal.style.display = 'none';
+            e.target.reset();
+            this.renderOrders();
+        });
+    }
 
     // Utilidades
     formatDate(date) {
