@@ -585,6 +585,86 @@ class CRMApp {
             this.renderOrders();
         });
     }
+    // ================= REPORTES =================
+    async loadReports() {
+        const content = document.querySelector('.content');
+        content.innerHTML = '<p>Cargando reportes...</p>';
+
+        const { data: tickets } = await supabase.from('tickets').select('status');
+        const { data: contacts } = await supabase.from('contacts').select('id');
+        const { data: orders } = await supabase.from('orders').select('total, status');
+        const { data: items } = await supabase.from('order_items').select('quantity');
+
+        const t = tickets || [];
+        const c = contacts || [];
+        const o = orders || [];
+        const it = items || [];
+
+        const openTickets = t.filter(x => x.status === 'open' || x.status === 'in_progress').length;
+        const resolvedTickets = t.filter(x => x.status === 'resolved' || x.status === 'closed').length;
+        const revenue = o.filter(x => x.status !== 'cancelled').reduce((sum, x) => sum + parseFloat(x.total), 0);
+        const unitsSold = it.reduce((sum, x) => sum + x.quantity, 0);
+
+        const statusLabels = { open: 'Abierto', in_progress: 'En Progreso', resolved: 'Resuelto', closed: 'Cerrado', pending: 'Pendiente', processing: 'Procesando', shipped: 'Enviado', delivered: 'Entregado', cancelled: 'Cancelado' };
+
+        const barBlock = (title, statuses, arr, colorClass) => `
+            <div class="card">
+                <div class="card-header"><h3>${title}</h3></div>
+                <div class="card-body">
+                    ${statuses.map(s => {
+                        const n = arr.filter(x => x.status === s).length;
+                        const pct = arr.length ? Math.round((n / arr.length) * 100) : 0;
+                        return `
+                            <div class="report-bar-row">
+                                <span class="report-label">${statusLabels[s]}</span>
+                                <div class="report-bar"><div class="report-bar-fill ${colorClass}" style="width: ${pct}%"></div></div>
+                                <span class="report-value">${n}</span>
+                            </div>`;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+
+        content.innerHTML = `
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #3b82f6;"><i class="fas fa-ticket-alt"></i></div>
+                    <div class="stat-info">
+                        <h3>Tickets Abiertos</h3>
+                        <p class="stat-number">${openTickets}</p>
+                        <span class="stat-change positive">${resolvedTickets} resueltos</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #10b981;"><i class="fas fa-users"></i></div>
+                    <div class="stat-info">
+                        <h3>Clientes</h3>
+                        <p class="stat-number">${c.length}</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #f59e0b;"><i class="fas fa-shopping-cart"></i></div>
+                    <div class="stat-info">
+                        <h3>Pedidos</h3>
+                        <p class="stat-number">${o.length}</p>
+                        <span class="stat-change positive">${unitsSold} unidades vendidas</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #8b5cf6;"><i class="fas fa-euro-sign"></i></div>
+                    <div class="stat-info">
+                        <h3>Ingresos</h3>
+                        <p class="stat-number">${this.formatCurrency(revenue)}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid-2col">
+                ${barBlock('<i class="fas fa-ticket-alt"></i> Tickets por Estado', ['open', 'in_progress', 'resolved', 'closed'], t, 'bar-blue')}
+                ${barBlock('<i class="fas fa-shopping-cart"></i> Pedidos por Estado', ['pending', 'processing', 'shipped', 'delivered', 'cancelled'], o, 'bar-green')}
+            </div>
+        `;
+    }
 
     // Utilidades
     formatDate(date) {
