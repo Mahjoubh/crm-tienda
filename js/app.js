@@ -43,6 +43,9 @@ class CRMApp {
             case 'tickets':
                 await this.loadTickets();
                 break;
+            case 'contacts':
+                await this.loadContacts();
+                break;
             default:
                 document.querySelector('.content').innerHTML = '<div class="card"><div class="card-body"><p>🚧 Sección en construcción.</p></div></div>';
         }
@@ -60,7 +63,7 @@ class CRMApp {
         }
     }
 
-    // ================= PÁGINA DE TICKETS =================
+    // ================= TICKETS =================
     async loadTickets() {
         const content = document.querySelector('.content');
         content.innerHTML = `
@@ -103,7 +106,6 @@ class CRMApp {
         this.setupTicketEvents();
     }
 
-    // Mostrar tabla de tickets con datos reales
     async renderTickets() {
         const container = document.getElementById('tickets-container');
         const { data, error } = await supabase
@@ -127,13 +129,7 @@ class CRMApp {
         container.innerHTML = `
             <table class="data-table">
                 <thead>
-                    <tr>
-                        <th>Asunto</th>
-                        <th>Cliente</th>
-                        <th>Prioridad</th>
-                        <th>Estado</th>
-                        <th>Fecha</th>
-                    </tr>
+                    <tr><th>Asunto</th><th>Cliente</th><th>Prioridad</th><th>Estado</th><th>Fecha</th></tr>
                 </thead>
                 <tbody>
                     ${data.map(t => `
@@ -155,7 +151,6 @@ class CRMApp {
             </table>
         `;
 
-        // Cambiar estado desde el desplegable
         container.querySelectorAll('.status-select').forEach(select => {
             select.addEventListener('change', async (e) => {
                 const { error } = await supabase
@@ -167,7 +162,6 @@ class CRMApp {
         });
     }
 
-    // Cargar clientes en el formulario
     async loadContactOptions() {
         const select = document.getElementById('ticket-contact');
         const { data } = await supabase.from('contacts').select('id, name').order('name');
@@ -177,17 +171,10 @@ class CRMApp {
         }
     }
 
-    // Botones del formulario
     setupTicketEvents() {
         const modal = document.getElementById('ticket-modal');
-
-        document.getElementById('btn-new-ticket').addEventListener('click', () => {
-            modal.style.display = 'flex';
-        });
-
-        document.getElementById('btn-cancel').addEventListener('click', () => {
-            modal.style.display = 'none';
-        });
+        document.getElementById('btn-new-ticket').addEventListener('click', () => modal.style.display = 'flex');
+        document.getElementById('btn-cancel').addEventListener('click', () => modal.style.display = 'none');
 
         document.getElementById('ticket-form').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -198,13 +185,117 @@ class CRMApp {
                 priority: document.getElementById('ticket-priority').value,
                 status: 'open'
             }]);
-
             if (error) {
                 alert('❌ Error al crear: ' + error.message);
             } else {
                 modal.style.display = 'none';
                 e.target.reset();
                 this.renderTickets();
+            }
+        });
+    }
+
+    // ================= CONTACTOS =================
+    async loadContacts() {
+        const content = document.querySelector('.content');
+        content.innerHTML = `
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-address-book"></i> Gestión de Contactos</h3>
+                    <button class="btn btn-primary" id="btn-new-contact"><i class="fas fa-plus"></i> Nuevo Cliente</button>
+                </div>
+                <div class="card-body">
+                    <div id="contacts-container"><p>Cargando contactos...</p></div>
+                </div>
+            </div>
+
+            <div class="modal-overlay" id="contact-modal">
+                <div class="modal">
+                    <h3>Nuevo Cliente</h3>
+                    <form id="contact-form">
+                        <label>Nombre completo</label>
+                        <input type="text" id="contact-name" required placeholder="Ej: Ana García">
+                        <label>Email</label>
+                        <input type="email" id="contact-email" required placeholder="ana@empresa.com">
+                        <label>Teléfono</label>
+                        <input type="text" id="contact-phone" placeholder="+34 600 000 000">
+                        <label>Empresa</label>
+                        <input type="text" id="contact-company" placeholder="Nombre de la empresa">
+                        <label>Ciudad</label>
+                        <input type="text" id="contact-city" placeholder="Madrid">
+                        <div class="modal-actions">
+                            <button type="button" class="btn btn-secondary" id="btn-cancel-contact">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Guardar Cliente</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+        this.renderContacts();
+        this.setupContactEvents();
+    }
+
+    async renderContacts() {
+        const container = document.getElementById('contacts-container');
+        const { data, error } = await supabase
+            .from('contacts')
+            .select('*')
+            .order('name');
+
+        if (error) {
+            container.innerHTML = '<p class="error">❌ Error: ' + error.message + '</p>';
+            return;
+        }
+
+        if (!data || data.length === 0) {
+            container.innerHTML = '<p>No hay contactos. Crea el primero con "Nuevo Cliente".</p>';
+            return;
+        }
+
+        const statusLabels = { active: 'Activo', lead: 'Lead', inactive: 'Inactivo' };
+
+        container.innerHTML = `
+            <table class="data-table">
+                <thead>
+                    <tr><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Empresa</th><th>Ciudad</th><th>Estado</th></tr>
+                </thead>
+                <tbody>
+                    ${data.map(c => `
+                        <tr>
+                            <td><strong>${c.name}</strong></td>
+                            <td>${c.email}</td>
+                            <td>${c.phone || '—'}</td>
+                            <td>${c.company || '—'}</td>
+                            <td>${c.city || '—'}</td>
+                            <td><span class="badge contact-${c.status}">${statusLabels[c.status] || c.status}</span></td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+    }
+
+    setupContactEvents() {
+        const modal = document.getElementById('contact-modal');
+        document.getElementById('btn-new-contact').addEventListener('click', () => modal.style.display = 'flex');
+        document.getElementById('btn-cancel-contact').addEventListener('click', () => modal.style.display = 'none');
+
+        document.getElementById('contact-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const { error } = await supabase.from('contacts').insert([{
+                name: document.getElementById('contact-name').value,
+                email: document.getElementById('contact-email').value,
+                phone: document.getElementById('contact-phone').value,
+                company: document.getElementById('contact-company').value,
+                city: document.getElementById('contact-city').value,
+                status: 'active'
+            }]);
+            if (error) {
+                alert('❌ Error al crear: ' + error.message);
+            } else {
+                modal.style.display = 'none';
+                e.target.reset();
+                this.renderContacts();
             }
         });
     }
