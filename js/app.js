@@ -52,6 +52,9 @@ class CRMApp {
             case 'orders':
                 await this.loadOrders();
                 break;
+             case 'reports':
+                await this.loadReports();
+                break;   
             default:
                 document.querySelector('.content').innerHTML = '<div class="card"><div class="card-body"><p>🚧 Sección en construcción.</p></div></div>';
         }
