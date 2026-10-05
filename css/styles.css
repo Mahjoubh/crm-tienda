@@ -459,3 +459,7 @@ body {
     .menu-toggle { display: block; }
     .stats-grid, .grid-2col { grid-template-columns: 1fr; }
 }
+/* ===== ESTADOS DE STOCK ===== */
+.stock-ok { background: rgba(16,185,129,0.1); color: var(--success); }
+.stock-low { background: rgba(245,158,11,0.1); color: var(--warning); }
+.stock-out { background: rgba(239,68,68,0.1); color: var(--danger); }
