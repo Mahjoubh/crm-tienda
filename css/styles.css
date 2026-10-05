@@ -1,3 +1,116 @@
+/* ===== TABLA DE DATOS ===== */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th {
+    text-align: left;
+    padding: 12px 15px;
+    background: var(--gray-100);
+    font-size: 13px;
+    text-transform: uppercase;
+    color: var(--gray-500);
+    border-bottom: 2px solid var(--gray-200);
+}
+
+.data-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid var(--gray-100);
+    font-size: 14px;
+}
+
+.data-table tr:hover {
+    background: var(--gray-50);
+}
+
+/* ===== PRIORIDADES ===== */
+.priority-low { background: rgba(16,185,129,0.1); color: var(--success); }
+.priority-medium { background: rgba(59,130,246,0.1); color: var(--primary); }
+.priority-high { background: rgba(239,68,68,0.1); color: var(--danger); }
+
+/* ===== SELECT DE ESTADO ===== */
+.status-select {
+    padding: 6px 10px;
+    border: 1px solid var(--gray-200);
+    border-radius: 6px;
+    font-size: 13px;
+    background: white;
+    cursor: pointer;
+}
+
+/* ===== MODAL ===== */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal h3 {
+    margin-bottom: 20px;
+}
+
+.modal label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gray-700);
+    margin: 12px 0 6px;
+}
+
+.modal input,
+.modal select,
+.modal textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--gray-200);
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+}
+
+.modal input:focus,
+.modal select:focus,
+.modal textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.btn-secondary {
+    background: var(--gray-200);
+    color: var(--gray-700);
+}
+
+.error {
+    color: var(--danger);
+    background: rgba(239,68,68,0.1);
+    padding: 12px;
+    border-radius: 8px;
+}
 /* ===== ESTADOS DE CONTACTO ===== */
 .contact-active { background: rgba(16,185,129,0.1); color: var(--success); }
 .contact-lead { background: rgba(59,130,246,0.1); color: var(--primary); }
