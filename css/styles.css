@@ -509,3 +509,41 @@ body {
     font-weight: 600;
     font-size: 13px;
 }
+/* ===== CONFIGURACIÓN ===== */
+.settings-form label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gray-700);
+    margin: 12px 0 6px;
+}
+
+.settings-form input,
+.settings-form select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--gray-200);
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.settings-form input:focus,
+.settings-form select:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.settings-url {
+    font-size: 13px;
+    color: var(--gray-500);
+    background: var(--gray-50);
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    word-break: break-all;
+}
+
+.saved-msg {
+    color: var(--success);
+    font-weight: 600;
+}
