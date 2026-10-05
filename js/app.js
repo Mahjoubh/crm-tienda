@@ -672,6 +672,115 @@ class CRMApp {
             </div>
         `;
     }
+    // ================= CONFIGURACIÓN =================
+    async loadSettings() {
+        const content = document.querySelector('.content');
+        content.innerHTML = `
+            <div class="grid-2col">
+                <div class="card">
+                    <div class="card-header"><h3><i class="fas fa-building"></i> Datos de la Empresa</h3></div>
+                    <div class="card-body">
+                        <form id="settings-form" class="settings-form">
+                            <label>Nombre de la empresa</label>
+                            <input type="text" id="set-company" placeholder="Mi Empresa SL">
+                            <label>Email de contacto</label>
+                            <input type="email" id="set-email" placeholder="info@empresa.com">
+                            <label>Teléfono</label>
+                            <input type="text" id="set-phone" placeholder="+34 900 000 000">
+                            <label>Moneda</label>
+                            <select id="set-currency">
+                                <option value="EUR">EUR (€)</option>
+                                <option value="USD">USD ($)</option>
+                                <option value="MXN">MXN ($)</option>
+                            </select>
+                            <div class="modal-actions">
+                                <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                            </div>
+                            <p id="settings-saved" class="saved-msg"></p>
+                        </form>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="card">
+                        <div class="card-header"><h3><i class="fas fa-plug"></i> Conexión Supabase</h3></div>
+                        <div class="card-body">
+                            <p class="settings-url" id="set-url"></p>
+                            <button class="btn btn-primary" id="btn-test-connection"><i class="fas fa-bolt"></i> Probar Conexión</button>
+                            <p id="connection-result" style="margin-top:12px"></p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header"><h3><i class="fas fa-database"></i> Copias de Seguridad</h3></div>
+                        <div class="card-body">
+                            <button class="btn btn-primary" id="btn-export"><i class="fas fa-download"></i> Exportar Backup (JSON)</button>
+                            <p style="margin-top:10px; font-size:13px; color:var(--gray-500)">Descarga todos tus datos (clientes, tickets, productos y pedidos) en un archivo JSON.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Cargar datos actuales
+        const { data } = await supabase.from('settings').select('*').eq('id', 1).single();
+        if (data) {
+            document.getElementById('set-company').value = data.company_name || '';
+            document.getElementById('set-email').value = data.email || '';
+            document.getElementById('set-phone').value = data.phone || '';
+            document.getElementById('set-currency').value = data.currency || 'EUR';
+        }
+        document.getElementById('set-url').textContent = '🔗 ' + supabase.supabaseUrl;
+
+        // Guardar cambios
+        document.getElementById('settings-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const { error } = await supabase.from('settings').update({
+                company_name: document.getElementById('set-company').value,
+                email: document.getElementById('set-email').value,
+                phone: document.getElementById('set-phone').value,
+                currency: document.getElementById('set-currency').value
+            }).eq('id', 1);
+
+            const msg = document.getElementById('settings-saved');
+            msg.textContent = error ? '❌ Error al guardar' : '✅ Cambios guardados';
+            setTimeout(() => msg.textContent = '', 2500);
+        });
+
+        // Probar conexión
+        document.getElementById('btn-test-connection').addEventListener('click', async () => {
+            const result = document.getElementById('connection-result');
+            result.textContent = '⏳ Probando...';
+            const start = performance.now();
+            const { error } = await supabase.from('contacts').select('id').limit(1);
+            const ms = Math.round(performance.now() - start);
+            result.innerHTML = error
+                ? '<span class="error">❌ Error: ' + error.message + '</span>'
+                : '<span class="saved-msg">✅ Conexión correcta (' + ms + ' ms)</span>';
+        });
+
+        // Exportar backup
+        document.getElementById('btn-export').addEventListener('click', async () => {
+            const [c, t, p, o] = await Promise.all([
+                supabase.from('contacts').select('*'),
+                supabase.from('tickets').select('*'),
+                supabase.from('products').select('*'),
+                supabase.from('orders').select('*')
+            ]);
+            const backup = {
+                exported_at: new Date().toISOString(),
+                contacts: c.data,
+                tickets: t.data,
+                products: p.data,
+                orders: o.data
+            };
+            const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'crm-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+            a.click();
+        });
+    }
 
     // Utilidades
     formatDate(date) {
