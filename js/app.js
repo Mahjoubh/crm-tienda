@@ -46,6 +46,9 @@ class CRMApp {
             case 'contacts':
                 await this.loadContacts();
                 break;
+            case 'products':
+                await this.loadProducts();
+                break;
             default:
                 document.querySelector('.content').innerHTML = '<div class="card"><div class="card-body"><p>🚧 Sección en construcción.</p></div></div>';
         }
@@ -296,6 +299,120 @@ class CRMApp {
                 modal.style.display = 'none';
                 e.target.reset();
                 this.renderContacts();
+            }
+        });
+    }
+
+    // ================= PRODUCTOS =================
+    async loadProducts() {
+        const content = document.querySelector('.content');
+        content.innerHTML = `
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-box"></i> Catálogo de Productos</h3>
+                    <button class="btn btn-primary" id="btn-new-product"><i class="fas fa-plus"></i> Nuevo Producto</button>
+                </div>
+                <div class="card-body">
+                    <div id="products-container"><p>Cargando productos...</p></div>
+                </div>
+            </div>
+
+            <div class="modal-overlay" id="product-modal">
+                <div class="modal">
+                    <h3>Nuevo Producto</h3>
+                    <form id="product-form">
+                        <label>Nombre del producto</label>
+                        <input type="text" id="product-name" required placeholder="Ej: Teclado inalámbrico">
+                        <label>Descripción</label>
+                        <textarea id="product-description" rows="2" placeholder="Descripción corta"></textarea>
+                        <label>Precio (€)</label>
+                        <input type="number" id="product-price" step="0.01" min="0" required placeholder="49.99">
+                        <label>Stock</label>
+                        <input type="number" id="product-stock" min="0" required placeholder="20">
+                        <label>Categoría</label>
+                        <input type="text" id="product-category" placeholder="Electrónica">
+                        <div class="modal-actions">
+                            <button type="button" class="btn btn-secondary" id="btn-cancel-product">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Guardar Producto</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+        this.renderProducts();
+        this.setupProductEvents();
+    }
+
+    async renderProducts() {
+        const container = document.getElementById('products-container');
+        const { data, error } = await supabase
+            .from('products')
+            .select('*')
+            .order('name');
+
+        if (error) {
+            container.innerHTML = '<p class="error">❌ Error: ' + error.message + '</p>';
+            return;
+        }
+
+        if (!data || data.length === 0) {
+            container.innerHTML = '<p>No hay productos. Crea el primero con "Nuevo Producto".</p>';
+            return;
+        }
+
+        container.innerHTML = `
+            <table class="data-table">
+                <thead>
+                    <tr><th>Producto</th><th>Categoría</th><th>Precio</th><th>Stock</th><th>Estado</th></tr>
+                </thead>
+                <tbody>
+                    ${data.map(p => `
+                        <tr>
+                            <td><strong>${p.name}</strong></td>
+                            <td>${p.category || '—'}</td>
+                            <td><strong>${this.formatCurrency(parseFloat(p.price))}</strong></td>
+                            <td>${p.stock}</td>
+                            <td><span class="badge ${this.stockBadge(p.stock)}">${this.stockLabel(p.stock)}</span></td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+    }
+
+    stockBadge(stock) {
+        if (stock <= 0) return 'stock-out';
+        if (stock <= 10) return 'stock-low';
+        return 'stock-ok';
+    }
+
+    stockLabel(stock) {
+        if (stock <= 0) return 'Agotado';
+        if (stock <= 10) return 'Stock bajo';
+        return 'En stock';
+    }
+
+    setupProductEvents() {
+        const modal = document.getElementById('product-modal');
+        document.getElementById('btn-new-product').addEventListener('click', () => modal.style.display = 'flex');
+        document.getElementById('btn-cancel-product').addEventListener('click', () => modal.style.display = 'none');
+
+        document.getElementById('product-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const { error } = await supabase.from('products').insert([{
+                name: document.getElementById('product-name').value,
+                description: document.getElementById('product-description').value,
+                price: parseFloat(document.getElementById('product-price').value),
+                stock: parseInt(document.getElementById('product-stock').value),
+                category: document.getElementById('product-category').value,
+                active: true
+            }]);
+            if (error) {
+                alert('❌ Error al crear: ' + error.message);
+            } else {
+                modal.style.display = 'none';
+                e.target.reset();
+                this.renderProducts();
             }
         });
     }
