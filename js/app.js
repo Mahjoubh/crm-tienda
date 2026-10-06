@@ -409,20 +409,24 @@ class CRMApp {
         });
     }
 
-    async loadWhatsApp() {
+     async loadWhatsApp() {
         const content = document.querySelector('.content');
+        const fieldStyle = 'width:100%;padding:9px 10px;border:1px solid #d1d5db;border-radius:8px;margin-bottom:12px;display:block;font-size:14px;background:#fff;';
+        const labelStyle = 'display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:5px;';
         content.innerHTML = `
             <div class="grid-2col">
                 <div class="card">
                     <div class="card-header"><h3><i class="fab fa-whatsapp"></i> Nuevo mensaje</h3></div>
                     <div class="card-body">
-                        <label>Cliente</label>
-                        <select id="wa-contact"><option value="">-- Selecciona cliente --</option></select>
-                        <label>Plantilla</label>
-                        <select id="wa-tpl"><option value="">-- Mensaje libre --</option></select>
-                        <label>Mensaje</label>
-                        <textarea id="wa-msg" rows="4" placeholder="Escribe o elige plantilla..."></textarea>
-                        <div class="modal-actions"><button class="btn btn-primary" id="wa-send-page">📨 Abrir WhatsApp y registrar</button></div>
+                        <form class="settings-form" id="wa-page-form">
+                            <label style="${labelStyle}">Cliente</label>
+                            <select id="wa-contact" style="${fieldStyle}"><option value="">-- Selecciona cliente --</option></select>
+                            <label style="${labelStyle}">Plantilla</label>
+                            <select id="wa-tpl" style="${fieldStyle}"><option value="">-- Mensaje libre --</option></select>
+                            <label style="${labelStyle}">Mensaje</label>
+                            <textarea id="wa-msg" rows="4" style="${fieldStyle}" placeholder="Escribe o elige plantilla..."></textarea>
+                            <button type="button" class="btn btn-primary" id="wa-send-page">📨 Abrir WhatsApp y registrar</button>
+                        </form>
                     </div>
                 </div>
                 <div class="card">
@@ -454,7 +458,7 @@ class CRMApp {
             const message = document.getElementById('wa-msg').value.trim();
             if (!phone) { alert('El cliente no tiene teléfono o falta el prefijo'); return; }
             if (!message) { alert('Escribe un mensaje o elige plantilla'); return; }
-            window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(message), '_blank');
+            this.openLink('https://wa.me/' + phone + '?text=' + encodeURIComponent(message));
             await supabase.from('whatsapp_logs').insert([{ contact_id: opt.value, phone: phone, template: document.getElementById('wa-tpl').value || 'libre', message: message, source: 'compositor' }]);
             this.renderWhatsAppLogs();
         });
