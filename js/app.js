@@ -296,7 +296,7 @@ class CRMApp {
 
         container.innerHTML = `
             <table class="data-table">
-                <thead><tr><th>Producto</th><th>Categoría</th><th>Precio</th><th>Stock</th><th>Estado</th><th>Acciones</th></tr></thead>
+                <thead><tr><th>Imagen</th><th>Producto</th><th>Categoría</th><th>Precio</th><th>Stock</th><th>Estado</th><th>Acciones</th></tr></thead>
                 <tbody>
                     ${data.map(p => `
                         <tr>
