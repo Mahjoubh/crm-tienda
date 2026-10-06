@@ -388,14 +388,7 @@ class CRMApp {
                 
                 productData.image_url = publicUrl;
             }
-            const productData = {
-                name: document.getElementById('product-name').value,
-                description: document.getElementById('product-description').value,
-                price: parseFloat(document.getElementById('product-price').value),
-                stock: parseInt(document.getElementById('product-stock').value),
-                category: document.getElementById('product-category').value,
-                active: true
-            };
+            const id = document.getElementById('product-id').value;
             const { error } = id ? await supabase.from('products').update(productData).eq('id', id) : await supabase.from('products').insert([productData]);
             if (error) alert('❌ Error: ' + error.message);
             else { modal.style.display = 'none'; e.target.reset(); this.renderProducts(); }
