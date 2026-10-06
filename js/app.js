@@ -1715,7 +1715,77 @@ class CRMApp {
             }
         });
     }
-    
+        // ================= IDIOMAS (ES / FR / AR) =================
+    i18nDict() {
+        return {
+            fr: {
+                'Dashboard':'Tableau de bord','Tickets':'Tickets','Contactos':'Contacts','Productos':'Produits','Pedidos':'Commandes','Reportes':'Rapports','WhatsApp':'WhatsApp','Configuración':'Paramètres','Salir':'Déconnexion','Ver Tienda Pública':'Voir la boutique','Buscar...':'Rechercher...','Desarrollo':'Développement',
+                'Tickets Abiertos':'Tickets ouverts','Clientes':'Clients','Pedidos Pendientes':'Commandes en attente','Ingresos Mensuels':'Revenus mensuels','Ingresos Mensuales':'Revenus mensuels','Ver todos':'Tout voir','Tickets Recientes':'Tickets récents','Pedidos Recientes':'Commandes récentes',
+                'Gestión de Contactos':'Gestion des contacts','Gestión de Tickets':'Gestion des tickets','Gestión de Pedidos':'Gestion des commandes','Catálogo de Productos':'Catalogue produits','Nuevo Cliente':'Nouveau client','Nuevo Producto':'Nouveau produit','Nuevo Ticket':'Nouveau ticket','Nuevo Pedido':'Nouvelle commande',
+                'Nombre':'Nom','Email':'Email','Teléfono':'Téléphone','Precio':'Prix','Stock':'Stock','Estado':'Statut','Acciones':'Actions','Categoría':'Catégorie','Total':'Total','Fecha':'Date','Cliente':'Client','Guardar':'Enregistrer','Cancelar':'Annuler','Eliminar':'Supprimer','Editar':'Modifier',
+                'Nuevo mensaje':'Nouveau message','Historial de envíos':'Historique des envois','Abrir WhatsApp y registrar':'Ouvrir WhatsApp et enregistrer','Plantilla':'Modèle','Mensaje':'Message'
+            },
+            ar: {
+                'Dashboard':'لوحة التحكم','Tickets':'التذاكر','Contactos':'جهات الاتصال','Productos':'المنتجات','Pedidos':'الطلبات','Reportes':'التقارير','WhatsApp':'واتساب','Configuración':'الإعدادات','Salir':'تسجيل الخروج','Ver Tienda Pública':'عرض المتجر','Buscar...':'بحث...','Desarrollo':'تطوير',
+                'Tickets Abiertos':'تذاكر مفتوحة','Clientes':'العملاء','Pedidos Pendientes':'طلبات معلقة','Ingresos Mensuales':'الدخل الشهري','Ver todos':'عرض الكل','Tickets Recientes':'أحدث التذاكر','Pedidos Recientes':'أحدث الطلبات',
+                'Gestión de Contactos':'إدارة جهات الاتصال','Gestión de Tickets':'إدارة التذاكر','Gestión de Pedidos':'إدارة الطلبات','Catálogo de Productos':'كتالوج المنتجات','Nuevo Cliente':'عميل جديد','Nuevo Producto':'منتج جديد','Nuevo Ticket':'تذكرة جديدة','Nuevo Pedido':'طلب جديد',
+                'Nombre':'الاسم','Email':'البريد الإلكتروني','Teléfono':'الهاتف','Precio':'السعر','Stock':'المخزون','Estado':'الحالة','Acciones':'إجراءات','Categoría':'الفئة','Total':'الإجمالي','Fecha':'التاريخ','Cliente':'العميل','Guardar':'حفظ','Cancelar':'إلغاء','Eliminar':'حذف','Editar':'تعديل',
+                'Nuevo mensaje':'رسالة جديدة','Historial de envíos':'سجل الإرسالات','Abrir WhatsApp y registrar':'فتح واتساب وتسجيل','Plantilla':'قالب','Mensaje':'الرسالة'
+            }
+        };
+    }
+
+    injectLanguageSelector() {
+        const userMenu = document.querySelector('.user-menu');
+        if (!userMenu || document.getElementById('lang-select')) return;
+        const sel = document.createElement('select');
+        sel.id = 'lang-select';
+        sel.style.cssText = 'margin-right:8px;padding:4px 6px;border-radius:6px;border:1px solid #d1d5db;background:#fff;cursor:pointer;font-size:14px;';
+        sel.innerHTML = '<option value="es">🇪 ES</option><option value="fr">🇫🇷 FR</option><option value="ar">🇸🇦 AR</option>';
+        sel.value = this.lang || 'es';
+        sel.addEventListener('change', () => this.applyLanguage(sel.value));
+        userMenu.insertBefore(sel, userMenu.firstChild);
+    }
+
+    applyLanguage(lang) {
+        this.lang = lang;
+        localStorage.setItem('crm_lang', lang);
+        document.documentElement.lang = lang;
+        document.documentElement.dir = (lang === 'ar') ? 'rtl' : 'ltr';
+        const sel = document.getElementById('lang-select');
+        if (sel) sel.value = lang;
+        this.translatePage(document.body);
+    }
+
+    translatePage(root) {
+        const dict = (this.lang && this.lang !== 'es') ? (this.i18nDict()[this.lang] || {}) : null;
+        if (!this._esText) this._esText = new WeakMap();
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+        const nodes = [];
+        while (walker.nextNode()) nodes.push(walker.currentNode);
+        nodes.forEach(node => {
+            if (!this._esText.has(node)) this._esText.set(node, node.nodeValue);
+            const original = this._esText.get(node);
+            const key = original.trim();
+            if (!key) return;
+            let target;
+            if (dict && dict[key]) target = original.replace(key, dict[key]);
+            else if (!dict) target = original;
+            else return;
+            if (node.nodeValue !== target) node.nodeValue = target;
+        });
+    }
+
+    observeTranslations() {
+        if (this._i18nObserver) return;
+        let timer = null;
+        this._i18nObserver = new MutationObserver(() => {
+            clearTimeout(timer);
+            timer = setTimeout(() => this.translatePage(document.body), 60);
+        });
+        this._i18nObserver.observe(document.body, { subtree: true, childList: true, characterData: true });
+    }
+
     formatDate(date) { return new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(date)); }
     formatCurrency(amount) { return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(amount); }
 }
