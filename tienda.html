@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tienda Online</title>
+    <link rel="stylesheet" href="css/tienda.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <header class="t-header">
+        <h1><i class="fas fa-store"></i> Mi Tienda</h1>
+        <button class="t-cart-btn" id="cart-btn">
+            <i class="fas fa-shopping-cart"></i> Carrito
+            <span class="t-cart-count" id="cart-count">0</span>
+        </button>
+    </header>
+
+    <main class="t-main">
+        <h2 class="t-title">Nuestros Productos</h2>
+        <div class="t-grid" id="products-grid"><p>Cargando productos...</p></div>
+    </main>
+
+    <!-- CARRITO -->
+    <div class="t-overlay" id="cart-overlay">
+        <div class="t-panel">
+            <div class="t-panel-header">
+                <h3>Tu Carrito</h3>
+                <button id="cart-close">✕</button>
+            </div>
+            <div id="cart-items"></div>
+            <div class="t-total">Total: <strong id="cart-total">0,00 €</strong></div>
+            <button class="t-btn t-btn-full" id="checkout-btn">Finalizar Compra</button>
+        </div>
+    </div>
+
+    <!-- CHECKOUT -->
+    <div class="t-overlay" id="checkout-overlay">
+        <div class="t-panel">
+            <div class="t-panel-header">
+                <h3>Datos de Envío</h3>
+                <button id="checkout-close">✕</button>
+            </div>
+            <form id="checkout-form">
+                <label>Nombre completo</label>
+                <input type="text" id="co-name" required placeholder="Tu nombre">
+                <label>Email</label>
+                <input type="email" id="co-email" required placeholder="tu@email.com">
+                <button type="submit" class="t-btn t-btn-full">Confirmar Pedido</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- CONFIRMACIÓN -->
+    <div class="t-overlay" id="success-overlay">
+        <div class="t-panel t-center">
+            <i class="fas fa-check-circle t-success-icon"></i>
+            <h3>¡Pedido realizado!</h3>
+            <p>Tu número de pedido es <strong id="success-order"></strong></p>
+            <p>Te contactaremos pronto para el pago y el envío.</p>
+            <button class="t-btn" onclick="document.getElementById('success-overlay').style.display='none'">Seguir comprando</button>
+        </div>
+    </div>
+
+    <script type="module" src="js/tienda.js"></script>
+</body>
+</html>
