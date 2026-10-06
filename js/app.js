@@ -352,6 +352,19 @@ class CRMApp {
             modal.style.display = 'flex';
         });
         document.getElementById('btn-cancel-product').addEventListener('click', () => modal.style.display = 'none');
+                // Preview de imagen al seleccionar
+        document.getElementById('product-image').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const preview = document.getElementById('product-image-preview');
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
         document.getElementById('product-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('product-id').value;
