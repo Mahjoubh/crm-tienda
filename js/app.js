@@ -16,6 +16,9 @@ class CRMApp {
         await this.checkAuth();
         this.setupSoundAndRealtime();
         this.fixStoreButton();
+        this.injectLanguageSelector();
+        this.applyLanguage(localStorage.getItem('crm_lang') || 'es');
+        this.observeTranslations();
         console.log('CRM + Tienda Online iniciado');
     }
 
