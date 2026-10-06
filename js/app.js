@@ -56,6 +56,7 @@ class CRMApp {
         switch (pageId) {
             case 'dashboard':
                 document.querySelector('.content').innerHTML = this.dashboardHTML;
+                this.loadDashboardReal();
                 break;
             case 'tickets':
                 await this.loadTickets();
