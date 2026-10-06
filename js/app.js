@@ -100,6 +100,9 @@ class CRMApp {
             case 'whatsapp':
                 await this.loadWhatsApp();
                 break;
+            case 'social':
+                await this.loadSocial();
+                break;
             case 'settings':
                 await this.loadSettings();
                 break;
