@@ -60,7 +60,7 @@ class CRMApp {
                 break;
             case 'logout':
                 await supabase.auth.signOut();
-                document.querySelector('.content').innerHTML = this.dashboardHTML;
+                this.checkAuth();
                 break;
             default:
                 document.querySelector('.content').innerHTML = '<div class="card"><div class="card-body"><p>🚧 Sección en construcción.</p></div></div>';
