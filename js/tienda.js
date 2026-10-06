@@ -37,7 +37,7 @@ class Tienda {
         }
         grid.innerHTML = this.products.map(p => `
             <div class="t-product">
-                <div class="t-product-img"><i class="fas fa-box"></i></div>
+                ${p.image_url ? `<img src="${p.image_url}" style="width:100%;height:180px;object-fit:cover;border-radius:8px;margin-bottom:15px;">` : '<div class="t-product-img"><i class="fas fa-box"></i></div>'}
                 <h3>${p.name}</h3>
                 <p class="t-desc">${p.description || ''}</p>
                 <p class="t-price">${this.money(parseFloat(p.price))}</p>
