@@ -135,8 +135,12 @@ class CRMApp {
                         <input type="email" id="contact-email" required placeholder="ana@empresa.com">
                         <label>Teléfono</label>
                         <input type="text" id="contact-phone" placeholder="+34 600 000 000">
+                        <label>CIF / NIF</label>
+                        <input type="text" id="contact-taxid" placeholder="B12345678">
                         <label>Empresa</label>
                         <input type="text" id="contact-company" placeholder="Nombre de la empresa">
+                        <label>Dirección</label>
+                        <input type="text" id="contact-address" placeholder="Calle, número, CP, ciudad">
                         <label>Ciudad</label>
                         <input type="text" id="contact-city" placeholder="Madrid">
                         <div class="modal-actions">
@@ -160,12 +164,13 @@ class CRMApp {
         const statusLabels = { active: 'Activo', lead: 'Lead', inactive: 'Inactivo' };
         container.innerHTML = `
             <table class="data-table">
-                <thead><tr><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Empresa</th><th>Ciudad</th><th>Estado</th><th>Acciones</th></tr></thead>
+                <thead><tr><th>Nombre</th><th>Email</th><th>CIF/NIF</th><th>Teléfono</th><th>Empresa</th><th>Ciudad</th><th>Estado</th><th>Acciones</th></tr></thead>
                 <tbody>
                     ${data.map(c => `
                         <tr>
                             <td><strong>${c.name}</strong></td>
                             <td>${c.email}</td>
+                            <td>${c.tax_id || '—'}</td>
                             <td>${c.phone || '—'}</td>
                             <td>${c.company || '—'}</td>
                             <td>${c.city || '—'}</td>
@@ -196,7 +201,9 @@ class CRMApp {
         document.getElementById('contact-name').value = data.name;
         document.getElementById('contact-email').value = data.email;
         document.getElementById('contact-phone').value = data.phone || '';
+        document.getElementById('contact-taxid').value = data.tax_id || '';
         document.getElementById('contact-company').value = data.company || '';
+        document.getElementById('contact-address').value = data.address || '';
         document.getElementById('contact-city').value = data.city || '';
         document.getElementById('contact-modal').style.display = 'flex';
     }
@@ -224,7 +231,9 @@ class CRMApp {
                 name: document.getElementById('contact-name').value,
                 email: document.getElementById('contact-email').value,
                 phone: document.getElementById('contact-phone').value,
+                tax_id: document.getElementById('contact-taxid').value,
                 company: document.getElementById('contact-company').value,
+                address: document.getElementById('contact-address').value,
                 city: document.getElementById('contact-city').value,
                 status: 'active'
             };
@@ -651,11 +660,12 @@ class CRMApp {
         const statusLabels = { pending: 'Pendiente', processing: 'Procesando', shipped: 'Enviado', delivered: 'Entregado', cancelled: 'Cancelado' };
         container.innerHTML = `
             <table class="data-table">
-                <thead><tr><th>Nº Pedido</th><th>Cliente</th><th>Total</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead>
+                <thead><tr><th>Nº Pedido</th><th>Factura</th><th>Cliente</th><th>Total</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead>
                 <tbody>
                     ${data.map(o => `
                         <tr>
                             <td><strong>${o.order_number}</strong></td>
+                            <td>${o.invoice_number || '—'}</td>
                             <td>${o.contacts ? o.contacts.name : '—'}</td>
                             <td><strong>${this.formatCurrency(parseFloat(o.total))}</strong></td>
                             <td>
@@ -681,46 +691,64 @@ class CRMApp {
         container.querySelectorAll('.btn-invoice').forEach(btn => btn.addEventListener('click', () => this.generateInvoicePDF(btn.dataset.id)));
     }
 
-    // ================= FACTURA PDF =================
+    // ================= FACTURA PDF (PACK ESENCIAL) =================
     async generateInvoicePDF(orderId) {
         if (typeof window.jspdf === 'undefined') { alert('❌ Falta cargar jsPDF en index.html'); return; }
         const { jsPDF } = window.jspdf;
 
-        const { data: order } = await supabase.from('orders').select('*, contacts(name, email, company, city)').eq('id', orderId).single();
+        const { data: order } = await supabase.from('orders').select('*, contacts(name, email, company, city, tax_id, address)').eq('id', orderId).single();
         if (!order) { alert('Pedido no encontrado'); return; }
         const { data: items } = await supabase.from('order_items').select('*, products(name)').eq('order_id', orderId);
         const { data: settings } = await supabase.from('settings').select('*').eq('id', 1).single();
+
+        // --- Numeración oficial correlativa F-AAAA-#### ---
+        let invoiceNumber = order.invoice_number;
+        if (!invoiceNumber) {
+            const counter = parseInt((settings && settings.invoice_counter) || 0, 10) + 1;
+            const year = new Date().getFullYear();
+            invoiceNumber = 'F-' + year + '-' + String(counter).padStart(4, '0');
+            await supabase.from('settings').update({ invoice_counter: counter }).eq('id', 1);
+            await supabase.from('orders').update({ invoice_number: invoiceNumber }).eq('id', orderId);
+        }
 
         const money = (n) => parseFloat(n || 0).toFixed(2) + ' EUR';
         const doc = new jsPDF();
         const company = (settings && settings.company_name) ? settings.company_name : 'Mi Empresa';
 
-        // Encabezado empresa
+        // --- Cabecera empresa con datos fiscales ---
         doc.setFontSize(20); doc.setTextColor(37, 99, 235);
         doc.text(company, 15, 20);
-        doc.setFontSize(10); doc.setTextColor(90);
-        if (settings && settings.email) doc.text(settings.email, 15, 26);
-        if (settings && settings.phone) doc.text(settings.phone, 15, 31);
+        doc.setFontSize(9); doc.setTextColor(90);
+        let hy = 26;
+        if (settings && settings.address) { doc.text(settings.address, 15, hy); hy += 5; }
+        if (settings && settings.tax_id) { doc.text('CIF/NIF: ' + settings.tax_id, 15, hy); hy += 5; }
+        const contactLine = [settings && settings.email, settings && settings.phone].filter(Boolean).join('  |  ');
+        if (contactLine) doc.text(contactLine, 15, hy);
 
-        // Bloque factura
+        // --- Bloque factura ---
         doc.setFontSize(16); doc.setTextColor(0);
         doc.text('FACTURA', 195, 20, { align: 'right' });
         doc.setFontSize(10);
-        doc.text('Nº: ' + order.order_number, 195, 26, { align: 'right' });
-        doc.text('Fecha: ' + new Date(order.created_at).toLocaleDateString('es-ES'), 195, 31, { align: 'right' });
+        doc.text('Nº: ' + invoiceNumber, 195, 26, { align: 'right' });
+        doc.text('Pedido: ' + order.order_number, 195, 31, { align: 'right' });
+        doc.text('Fecha: ' + new Date(order.created_at).toLocaleDateString('es-ES'), 195, 36, { align: 'right' });
 
-        doc.setDrawColor(200); doc.line(15, 38, 195, 38);
+        doc.setDrawColor(200); doc.line(15, 44, 195, 44);
 
-        // Facturar a
+        // --- Facturar a con datos fiscales ---
         doc.setFontSize(11); doc.setTextColor(0);
-        doc.text('Facturar a:', 15, 46);
+        doc.text('Facturar a:', 15, 52);
         doc.setFontSize(10); doc.setTextColor(60);
-        doc.text((order.contacts && order.contacts.name) ? order.contacts.name : 'Cliente', 15, 52);
-        if (order.contacts && order.contacts.email) doc.text(order.contacts.email, 15, 57);
-        if (order.contacts && order.contacts.company) doc.text(order.contacts.company, 15, 62);
+        let cy = 58;
+        const ct = order.contacts || {};
+        doc.text(ct.name || 'Cliente', 15, cy); cy += 5;
+        if (ct.company) { doc.text(ct.company, 15, cy); cy += 5; }
+        if (ct.address) { doc.text(ct.address, 15, cy); cy += 5; }
+        if (ct.tax_id) { doc.text('CIF/NIF: ' + ct.tax_id, 15, cy); cy += 5; }
+        if (ct.email) { doc.text(ct.email, 15, cy); cy += 5; }
 
-        // Cabecera tabla
-        let y = 72;
+        // --- Tabla de líneas ---
+        let y = Math.max(cy + 6, 78);
         doc.setFillColor(37, 99, 235); doc.rect(15, y - 6, 180, 8, 'F');
         doc.setTextColor(255); doc.setFontSize(10);
         doc.text('Concepto', 17, y - 1);
@@ -730,9 +758,7 @@ class CRMApp {
         doc.setTextColor(0);
         y += 6;
 
-        // Filas
-        const lines = items || [];
-        lines.forEach((it) => {
+        (items || []).forEach((it) => {
             const name = (it.products && it.products.name) ? it.products.name : 'Producto';
             const qty = it.quantity || 0;
             const unit = parseFloat(it.unit_price || 0);
@@ -745,18 +771,30 @@ class CRMApp {
             y += 8;
         });
 
-        // Total
-        y += 4;
-        doc.setDrawColor(0); doc.line(120, y, 195, y);
-        y += 8;
-        doc.setFontSize(13);
-        doc.text('TOTAL: ' + money(order.total), 193, y, { align: 'right' });
+        // --- Desglose de IVA ---
+        const rate = parseFloat((settings && settings.iva_rate) || 21);
+        const total = parseFloat(order.total || 0);
+        const base = total / (1 + rate / 100);
+        const quota = total - base;
 
-        // Pie
+        y += 6;
+        doc.setFontSize(10); doc.setTextColor(60);
+        doc.text('Base imponible:', 140, y); doc.text(money(base), 193, y, { align: 'right' }); y += 6;
+        doc.text('IVA (' + rate + '%):', 140, y); doc.text(money(quota), 193, y, { align: 'right' }); y += 7;
+        doc.setFontSize(13); doc.setTextColor(0);
+        doc.text('TOTAL:', 140, y); doc.text(money(total), 193, y, { align: 'right' });
+
+        // --- Forma de pago e IBAN ---
+        y += 12;
+        doc.setFontSize(9); doc.setTextColor(60);
+        doc.text('Forma de pago: Transferencia bancaria', 15, y);
+        if (settings && settings.iban) doc.text('IBAN: ' + settings.iban, 15, y + 5);
+
+        // --- Pie ---
         doc.setFontSize(8); doc.setTextColor(140);
         doc.text('Gracias por su compra. Documento generado automáticamente por MiCRM.', 15, 285);
 
-        doc.save('factura-' + order.order_number + '.pdf');
+        doc.save('factura-' + invoiceNumber + '.pdf');
     }
 
     async loadOrderOptions() {
@@ -949,8 +987,12 @@ class CRMApp {
                     <div class="card-body">
                         <form id="settings-form" class="settings-form">
                             <label>Nombre de la empresa</label><input type="text" id="set-company" placeholder="Mi Empresa SL">
+                            <label>CIF / NIF</label><input type="text" id="set-taxid" placeholder="B12345678">
+                            <label>Dirección fiscal</label><input type="text" id="set-address" placeholder="Calle, número, CP, ciudad">
                             <label>Email de contacto</label><input type="email" id="set-email" placeholder="info@empresa.com">
                             <label>Teléfono</label><input type="text" id="set-phone" placeholder="+34 900 000 000">
+                            <label>IBAN</label><input type="text" id="set-iban" placeholder="ES00 0000 0000 0000 0000 0000">
+                            <label>IVA por defecto (%)</label><input type="number" id="set-iva" step="0.1" value="21">
                             <label>Moneda</label>
                             <select id="set-currency"><option value="EUR">EUR (€)</option><option value="USD">USD ($)</option><option value="MXN">MXN ($)</option></select>
                             <div class="modal-actions"><button type="submit" class="btn btn-primary">Guardar Cambios</button></div>
@@ -980,14 +1022,27 @@ class CRMApp {
         const { data } = await supabase.from('settings').select('*').eq('id', 1).single();
         if (data) {
             document.getElementById('set-company').value = data.company_name || '';
+            document.getElementById('set-taxid').value = data.tax_id || '';
+            document.getElementById('set-address').value = data.address || '';
             document.getElementById('set-email').value = data.email || '';
             document.getElementById('set-phone').value = data.phone || '';
+            document.getElementById('set-iban').value = data.iban || '';
+            document.getElementById('set-iva').value = data.iva_rate || 21;
             document.getElementById('set-currency').value = data.currency || 'EUR';
         }
         document.getElementById('set-url').textContent = '🔗 ' + supabase.supabaseUrl;
         document.getElementById('settings-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const { error } = await supabase.from('settings').update({ company_name: document.getElementById('set-company').value, email: document.getElementById('set-email').value, phone: document.getElementById('set-phone').value, currency: document.getElementById('set-currency').value }).eq('id', 1);
+            const { error } = await supabase.from('settings').update({
+                company_name: document.getElementById('set-company').value,
+                tax_id: document.getElementById('set-taxid').value,
+                address: document.getElementById('set-address').value,
+                email: document.getElementById('set-email').value,
+                phone: document.getElementById('set-phone').value,
+                iban: document.getElementById('set-iban').value,
+                iva_rate: parseFloat(document.getElementById('set-iva').value) || 21,
+                currency: document.getElementById('set-currency').value
+            }).eq('id', 1);
             const msg = document.getElementById('settings-saved');
             msg.textContent = error ? '❌ Error al guardar' : '✅ Cambios guardados';
             setTimeout(() => msg.textContent = '', 2500);
