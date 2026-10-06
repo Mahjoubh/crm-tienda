@@ -368,6 +368,25 @@ class CRMApp {
         document.getElementById('product-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('product-id').value;
+                        // Subir imagen si hay archivo
+            const imageFile = document.getElementById('product-image').files[0];
+            if (imageFile) {
+                const fileName = `${Date.now()}-${imageFile.name}`;
+                const { error: uploadError } = await supabase.storage
+                    .from('product-images')
+                    .upload(fileName, imageFile);
+                
+                if (uploadError) {
+                    alert('Error al subir imagen: ' + uploadError.message);
+                    return;
+                }
+                
+                const { data: { publicUrl } } = supabase.storage
+                    .from('product-images')
+                    .getPublicUrl(fileName);
+                
+                productData.image_url = publicUrl;
+            }
             const productData = {
                 name: document.getElementById('product-name').value,
                 description: document.getElementById('product-description').value,
