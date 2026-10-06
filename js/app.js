@@ -83,7 +83,7 @@ class CRMApp {
         }
     }
 
-    // 🔓 LOGIN DESACTIVADO TEMPORALMENTE (entra directo al CRM)
+    // 🔓 LOGIN DESACTIVADO TEMPORALMENTE
     async checkAuth() {
         const loginOverlay = document.getElementById('login-overlay');
         const mainContent = document.querySelector('.main-content');
@@ -139,10 +139,18 @@ class CRMApp {
                         <input type="text" id="contact-taxid" placeholder="B12345678">
                         <label>Empresa</label>
                         <input type="text" id="contact-company" placeholder="Nombre de la empresa">
+                        <label>Tipo de cliente</label>
+                        <select id="contact-type"><option value="particular">Particular</option><option value="empresa">Empresa</option></select>
                         <label>Dirección</label>
                         <input type="text" id="contact-address" placeholder="Calle, número, CP, ciudad">
                         <label>Ciudad</label>
                         <input type="text" id="contact-city" placeholder="Madrid">
+                        <label>Estado</label>
+                        <select id="contact-status"><option value="active">Activo</option><option value="lead">Lead</option><option value="inactive">Inactivo</option></select>
+                        <label>Fecha último contacto</label>
+                        <input type="date" id="contact-lastcontact">
+                        <label>Notas / observaciones</label>
+                        <textarea id="contact-notes" rows="2" placeholder="Notas internas"></textarea>
                         <div class="modal-actions">
                             <button type="button" class="btn btn-secondary" id="btn-cancel-contact">Cancelar</button>
                             <button type="submit" class="btn btn-primary">Guardar Cliente</button>
@@ -162,16 +170,17 @@ class CRMApp {
         if (!data || data.length === 0) { container.innerHTML = '<p>No hay contactos.</p>'; return; }
 
         const statusLabels = { active: 'Activo', lead: 'Lead', inactive: 'Inactivo' };
+        const typeLabels = { particular: 'Particular', empresa: 'Empresa' };
         container.innerHTML = `
             <table class="data-table">
-                <thead><tr><th>Nombre</th><th>Email</th><th>CIF/NIF</th><th>Teléfono</th><th>Empresa</th><th>Ciudad</th><th>Estado</th><th>Acciones</th></tr></thead>
+                <thead><tr><th>Nombre</th><th>Tipo</th><th>Email</th><th>CIF/NIF</th><th>Empresa</th><th>Ciudad</th><th>Estado</th><th>Acciones</th></tr></thead>
                 <tbody>
                     ${data.map(c => `
                         <tr>
                             <td><strong>${c.name}</strong></td>
+                            <td>${typeLabels[c.customer_type] || 'Particular'}</td>
                             <td>${c.email}</td>
                             <td>${c.tax_id || '—'}</td>
-                            <td>${c.phone || '—'}</td>
                             <td>${c.company || '—'}</td>
                             <td>${c.city || '—'}</td>
                             <td><span class="badge contact-${c.status}">${statusLabels[c.status] || c.status}</span></td>
@@ -203,8 +212,12 @@ class CRMApp {
         document.getElementById('contact-phone').value = data.phone || '';
         document.getElementById('contact-taxid').value = data.tax_id || '';
         document.getElementById('contact-company').value = data.company || '';
+        document.getElementById('contact-type').value = data.customer_type || 'particular';
         document.getElementById('contact-address').value = data.address || '';
         document.getElementById('contact-city').value = data.city || '';
+        document.getElementById('contact-status').value = data.status || 'active';
+        document.getElementById('contact-lastcontact').value = data.last_contact_date || '';
+        document.getElementById('contact-notes').value = data.notes || '';
         document.getElementById('contact-modal').style.display = 'flex';
     }
 
@@ -233,9 +246,12 @@ class CRMApp {
                 phone: document.getElementById('contact-phone').value,
                 tax_id: document.getElementById('contact-taxid').value,
                 company: document.getElementById('contact-company').value,
+                customer_type: document.getElementById('contact-type').value,
                 address: document.getElementById('contact-address').value,
                 city: document.getElementById('contact-city').value,
-                status: 'active'
+                status: document.getElementById('contact-status').value,
+                last_contact_date: document.getElementById('contact-lastcontact').value || null,
+                notes: document.getElementById('contact-notes').value
             };
             const { error } = id ? await supabase.from('contacts').update(contactData).eq('id', id) : await supabase.from('contacts').insert([contactData]);
             if (error) alert('❌ Error: ' + error.message);
@@ -266,14 +282,24 @@ class CRMApp {
                         <img id="product-image-preview" style="max-width:150px;margin-top:10px;display:none;border-radius:8px;">
                         <label>Nombre del producto</label>
                         <input type="text" id="product-name" required placeholder="Ej: Teclado inalámbrico">
+                        <label>SKU / código interno</label>
+                        <input type="text" id="product-sku" placeholder="TEC-001">
                         <label>Descripción</label>
                         <textarea id="product-description" rows="2" placeholder="Descripción corta"></textarea>
-                        <label>Precio (€)</label>
+                        <label>Precio venta (€)</label>
                         <input type="number" id="product-price" step="0.01" min="0" required placeholder="49.99">
+                        <label>Coste (€)</label>
+                        <input type="number" id="product-cost" step="0.01" min="0" placeholder="20.00">
                         <label>Stock</label>
                         <input type="number" id="product-stock" min="0" required placeholder="20">
+                        <label>Stock mínimo (aviso)</label>
+                        <input type="number" id="product-minstock" min="0" value="5">
                         <label>Categoría</label>
                         <input type="text" id="product-category" placeholder="Electrónica">
+                        <label>IVA del producto (%)</label>
+                        <input type="number" id="product-iva" step="0.1" value="21">
+                        <label>Estado</label>
+                        <select id="product-active"><option value="1">Activo (visible en tienda)</option><option value="0">Inactivo (oculto)</option></select>
                         <div class="modal-actions">
                             <button type="button" class="btn btn-secondary" id="btn-cancel-product">Cancelar</button>
                             <button type="submit" class="btn btn-primary">Guardar Producto</button>
@@ -294,16 +320,18 @@ class CRMApp {
 
         container.innerHTML = `
             <table class="data-table">
-                <thead><tr><th>Imagen</th><th>Producto</th><th>Categoría</th><th>Precio</th><th>Stock</th><th>Estado</th><th>Acciones</th></tr></thead>
+                <thead><tr><th>Imagen</th><th>Producto</th><th>Categoría</th><th>Precio</th><th>Margen</th><th>Stock</th><th>Estado</th><th>Activo</th><th>Acciones</th></tr></thead>
                 <tbody>
                     ${data.map(p => `
                         <tr>
                             <td>${p.image_url ? `<img src="${p.image_url}" style="width:50px;height:50px;object-fit:cover;border-radius:6px;">` : '—'}</td>
-                            <td><strong>${p.name}</strong></td>
+                            <td><strong>${p.name}</strong>${p.sku ? `<br><small style="color:#9ca3af;">${p.sku}</small>` : ''}</td>
                             <td>${p.category || '—'}</td>
                             <td><strong>${this.formatCurrency(parseFloat(p.price))}</strong></td>
-                            <td>${p.stock}</td>
-                            <td><span class="badge ${this.stockBadge(p.stock)}">${this.stockLabel(p.stock)}</span></td>
+                            <td>${this.marginLabel(p)}</td>
+                            <td><span class="badge ${this.stockBadge(p)}">${p.stock}</span></td>
+                            <td>${this.stockLabel(p)}</td>
+                            <td><span class="badge ${p.active ? 'contact-active' : 'contact-inactive'}">${p.active ? 'Sí' : 'No'}</span></td>
                             <td>
                                 <button class="btn-edit" data-id="${p.id}"><i class="fas fa-edit"></i></button>
                                 <button class="btn-delete" data-id="${p.id}"><i class="fas fa-trash"></i></button>
@@ -317,6 +345,13 @@ class CRMApp {
         container.querySelectorAll('.btn-delete').forEach(btn => btn.addEventListener('click', () => this.deleteProduct(btn.dataset.id)));
     }
 
+    marginLabel(p) {
+        const price = parseFloat(p.price || 0), cost = parseFloat(p.cost || 0);
+        if (price <= 0) return '—';
+        const m = ((price - cost) / price) * 100;
+        return m.toFixed(0) + '%';
+    }
+
     async searchProducts(query) {
         const { data } = await supabase.from('products').select('*').ilike('name', `%${query}%`);
         this.renderProducts(data);
@@ -328,10 +363,15 @@ class CRMApp {
         document.getElementById('product-modal-title').textContent = 'Editar Producto';
         document.getElementById('product-id').value = data.id;
         document.getElementById('product-name').value = data.name;
+        document.getElementById('product-sku').value = data.sku || '';
         document.getElementById('product-description').value = data.description || '';
         document.getElementById('product-price').value = data.price;
+        document.getElementById('product-cost').value = data.cost || 0;
         document.getElementById('product-stock').value = data.stock;
+        document.getElementById('product-minstock').value = data.min_stock != null ? data.min_stock : 5;
         document.getElementById('product-category').value = data.category || '';
+        document.getElementById('product-iva').value = data.iva_rate != null ? data.iva_rate : 21;
+        document.getElementById('product-active').value = data.active ? '1' : '0';
         const preview = document.getElementById('product-image-preview');
         if (data.image_url) { preview.src = data.image_url; preview.style.display = 'block'; }
         else { preview.src = ''; preview.style.display = 'none'; }
@@ -373,29 +413,23 @@ class CRMApp {
 
             const productData = {
                 name: document.getElementById('product-name').value,
+                sku: document.getElementById('product-sku').value,
                 description: document.getElementById('product-description').value,
                 price: parseFloat(document.getElementById('product-price').value),
+                cost: parseFloat(document.getElementById('product-cost').value) || 0,
                 stock: parseInt(document.getElementById('product-stock').value),
+                min_stock: parseInt(document.getElementById('product-minstock').value) || 0,
                 category: document.getElementById('product-category').value,
-                active: true
+                iva_rate: parseFloat(document.getElementById('product-iva').value) || 21,
+                active: document.getElementById('product-active').value === '1'
             };
 
             const imageFile = document.getElementById('product-image').files[0];
             if (imageFile) {
                 const fileName = `${Date.now()}-${imageFile.name}`;
-                const { error: uploadError } = await supabase.storage
-                    .from('product-images')
-                    .upload(fileName, imageFile);
-
-                if (uploadError) {
-                    alert('Error al subir imagen: ' + uploadError.message);
-                    return;
-                }
-
-                const { data: { publicUrl } } = supabase.storage
-                    .from('product-images')
-                    .getPublicUrl(fileName);
-
+                const { error: uploadError } = await supabase.storage.from('product-images').upload(fileName, imageFile);
+                if (uploadError) { alert('Error al subir imagen: ' + uploadError.message); return; }
+                const { data: { publicUrl } } = supabase.storage.from('product-images').getPublicUrl(fileName);
                 productData.image_url = publicUrl;
             }
 
@@ -405,8 +439,8 @@ class CRMApp {
         });
     }
 
-    stockBadge(stock) { if (stock <= 0) return 'stock-out'; if (stock <= 10) return 'stock-low'; return 'stock-ok'; }
-    stockLabel(stock) { if (stock <= 0) return 'Agotado'; if (stock <= 10) return 'Stock bajo'; return 'En stock'; }
+    stockBadge(p) { const min = p.min_stock != null ? p.min_stock : 10; if (p.stock <= 0) return 'stock-out'; if (p.stock <= min) return 'stock-low'; return 'stock-ok'; }
+    stockLabel(p) { const min = p.min_stock != null ? p.min_stock : 10; if (p.stock <= 0) return 'Agotado'; if (p.stock <= min) return 'Stock bajo'; return 'En stock'; }
 
     // ================= TICKETS =================
     async loadTickets() {
@@ -430,14 +464,20 @@ class CRMApp {
                         <select id="ticket-contact" required><option value="">Cargando...</option></select>
                         <label>Asunto</label>
                         <input type="text" id="ticket-subject" required placeholder="Resumen del problema">
+                        <label>Categoría</label>
+                        <input type="text" id="ticket-category" placeholder="Soporte, Facturación, Envío...">
                         <label>Descripción</label>
                         <textarea id="ticket-description" rows="3" placeholder="Detalles (opcional)"></textarea>
+                        <label>Agente asignado</label>
+                        <input type="text" id="ticket-agent" placeholder="Nombre del agente">
                         <label>Prioridad</label>
                         <select id="ticket-priority">
                             <option value="low">Baja</option>
                             <option value="medium" selected>Media</option>
                             <option value="high">Alta</option>
                         </select>
+                        <label>Fecha límite de resolución</label>
+                        <input type="date" id="ticket-due">
                         <div class="modal-actions">
                             <button type="button" class="btn btn-secondary" id="btn-cancel">Cancelar</button>
                             <button type="submit" class="btn btn-primary">Guardar Ticket</button>
@@ -462,19 +502,20 @@ class CRMApp {
 
         container.innerHTML = `
             <table class="data-table">
-                <thead><tr><th>Asunto</th><th>Cliente</th><th>Prioridad</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead>
+                <thead><tr><th>Asunto</th><th>Cliente</th><th>Agente</th><th>Prioridad</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead>
                 <tbody>
                     ${data.map(t => `
                         <tr>
-                            <td><strong>${t.subject}</strong></td>
+                            <td><strong>${t.subject}</strong>${t.category ? `<br><span class="badge priority-low">${t.category}</span>` : ''}</td>
                             <td>${t.contacts ? t.contacts.name : '—'}</td>
+                            <td>${t.assigned_to || '—'}</td>
                             <td><span class="badge priority-${t.priority}">${priorityLabels[t.priority] || t.priority}</span></td>
                             <td>
                                 <select class="status-select" data-id="${t.id}">
                                     ${Object.keys(statusLabels).map(s => `<option value="${s}" ${s === t.status ? 'selected' : ''}>${statusLabels[s]}</option>`).join('')}
                                 </select>
                             </td>
-                            <td>${this.formatDate(t.created_at)}</td>
+                            <td>${this.formatDate(t.created_at)}${t.due_date ? `<br><small style="color:#ef4444;">Vence: ${t.due_date}</small>` : ''}</td>
                             <td>
                                 <button class="btn-chat" data-id="${t.id}"><i class="fas fa-comments"></i></button>
                                 <button class="btn-edit" data-id="${t.id}"><i class="fas fa-edit"></i></button>
@@ -508,8 +549,11 @@ class CRMApp {
         document.getElementById('ticket-modal-title').textContent = 'Editar Ticket';
         document.getElementById('ticket-id').value = data.id;
         document.getElementById('ticket-subject').value = data.subject;
+        document.getElementById('ticket-category').value = data.category || '';
         document.getElementById('ticket-description').value = data.description || '';
+        document.getElementById('ticket-agent').value = data.assigned_to || '';
         document.getElementById('ticket-priority').value = data.priority;
+        document.getElementById('ticket-due').value = data.due_date || '';
         document.getElementById('ticket-modal').style.display = 'flex';
     }
 
@@ -543,8 +587,11 @@ class CRMApp {
             const ticketData = {
                 contact_id: document.getElementById('ticket-contact').value,
                 subject: document.getElementById('ticket-subject').value,
+                category: document.getElementById('ticket-category').value,
                 description: document.getElementById('ticket-description').value,
+                assigned_to: document.getElementById('ticket-agent').value,
                 priority: document.getElementById('ticket-priority').value,
+                due_date: document.getElementById('ticket-due').value || null,
                 status: 'open'
             };
             const { error } = id ? await supabase.from('tickets').update(ticketData).eq('id', id) : await supabase.from('tickets').insert([ticketData]);
@@ -637,10 +684,46 @@ class CRMApp {
                         <select id="order-product" required><option value="">Cargando...</option></select>
                         <label>Cantidad</label>
                         <input type="number" id="order-quantity" min="1" value="1" required>
+                        <label>Descuento (%)</label>
+                        <input type="number" id="order-discount" min="0" max="100" value="0">
+                        <label>Método de pago</label>
+                        <select id="order-payment"><option value="transferencia">Transferencia</option><option value="tarjeta">Tarjeta</option><option value="efectivo">Efectivo</option><option value="paypal">PayPal</option></select>
+                        <label>Dirección de envío</label>
+                        <input type="text" id="order-shipping" placeholder="Calle, número, CP, ciudad">
+                        <label>Fecha estimada de entrega</label>
+                        <input type="date" id="order-delivery">
+                        <label>Notas del pedido</label>
+                        <textarea id="order-notes" rows="2" placeholder="Observaciones"></textarea>
                         <div class="order-total">Total: <strong id="order-total">0,00 €</strong></div>
                         <div class="modal-actions">
                             <button type="button" class="btn btn-secondary" id="btn-cancel-order">Cancelar</button>
                             <button type="submit" class="btn btn-primary">Guardar Pedido</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="modal-overlay" id="order-edit-modal">
+                <div class="modal">
+                    <h3>Editar Pedido</h3>
+                    <form id="order-edit-form">
+                        <input type="hidden" id="order-edit-id">
+                        <label>Estado</label>
+                        <select id="order-edit-status">
+                            <option value="pending">Pendiente</option><option value="processing">Procesando</option><option value="shipped">Enviado</option><option value="delivered">Entregado</option><option value="cancelled">Cancelado</option>
+                        </select>
+                        <label>Método de pago</label>
+                        <select id="order-edit-payment"><option value="transferencia">Transferencia</option><option value="tarjeta">Tarjeta</option><option value="efectivo">Efectivo</option><option value="paypal">PayPal</option></select>
+                        <label>Descuento (%)</label>
+                        <input type="number" id="order-edit-discount" min="0" max="100" value="0">
+                        <label>Dirección de envío</label>
+                        <input type="text" id="order-edit-shipping">
+                        <label>Fecha estimada de entrega</label>
+                        <input type="date" id="order-edit-delivery">
+                        <label>Notas del pedido</label>
+                        <textarea id="order-edit-notes" rows="2"></textarea>
+                        <div class="modal-actions">
+                            <button type="button" class="btn btn-secondary" id="btn-cancel-order-edit">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
                         </div>
                     </form>
                 </div>
@@ -658,9 +741,10 @@ class CRMApp {
         if (!data || data.length === 0) { container.innerHTML = '<p>No hay pedidos.</p>'; return; }
 
         const statusLabels = { pending: 'Pendiente', processing: 'Procesando', shipped: 'Enviado', delivered: 'Entregado', cancelled: 'Cancelado' };
+        const paymentLabels = { transferencia: 'Transferencia', tarjeta: 'Tarjeta', efectivo: 'Efectivo', paypal: 'PayPal' };
         container.innerHTML = `
             <table class="data-table">
-                <thead><tr><th>Nº Pedido</th><th>Factura</th><th>Cliente</th><th>Total</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead>
+                <thead><tr><th>Nº Pedido</th><th>Factura</th><th>Cliente</th><th>Total</th><th>Pago</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead>
                 <tbody>
                     ${data.map(o => `
                         <tr>
@@ -668,6 +752,7 @@ class CRMApp {
                             <td>${o.invoice_number || '—'}</td>
                             <td>${o.contacts ? o.contacts.name : '—'}</td>
                             <td><strong>${this.formatCurrency(parseFloat(o.total))}</strong></td>
+                            <td>${paymentLabels[o.payment_method] || 'Transferencia'}</td>
                             <td>
                                 <select class="status-select" data-id="${o.id}">
                                     ${Object.keys(statusLabels).map(s => `<option value="${s}" ${s === o.status ? 'selected' : ''}>${statusLabels[s]}</option>`).join('')}
@@ -675,6 +760,7 @@ class CRMApp {
                             </td>
                             <td>${this.formatDate(o.created_at)}</td>
                             <td>
+                                <button class="btn-edit" data-id="${o.id}" title="Editar pedido"><i class="fas fa-edit"></i></button>
                                 <button class="btn-edit btn-invoice" data-id="${o.id}" title="Descargar factura en PDF">📄</button>
                             </td>
                         </tr>
@@ -689,112 +775,20 @@ class CRMApp {
             });
         });
         container.querySelectorAll('.btn-invoice').forEach(btn => btn.addEventListener('click', () => this.generateInvoicePDF(btn.dataset.id)));
+        container.querySelectorAll('.btn-edit:not(.btn-invoice)').forEach(btn => btn.addEventListener('click', () => this.editOrder(btn.dataset.id)));
     }
 
-    // ================= FACTURA PDF (PACK ESENCIAL) =================
-    async generateInvoicePDF(orderId) {
-        if (typeof window.jspdf === 'undefined') { alert('❌ Falta cargar jsPDF en index.html'); return; }
-        const { jsPDF } = window.jspdf;
-
-        const { data: order } = await supabase.from('orders').select('*, contacts(name, email, company, city, tax_id, address)').eq('id', orderId).single();
-        if (!order) { alert('Pedido no encontrado'); return; }
-        const { data: items } = await supabase.from('order_items').select('*, products(name)').eq('order_id', orderId);
-        const { data: settings } = await supabase.from('settings').select('*').eq('id', 1).single();
-
-        // --- Numeración oficial correlativa F-AAAA-#### ---
-        let invoiceNumber = order.invoice_number;
-        if (!invoiceNumber) {
-            const counter = parseInt((settings && settings.invoice_counter) || 0, 10) + 1;
-            const year = new Date().getFullYear();
-            invoiceNumber = 'F-' + year + '-' + String(counter).padStart(4, '0');
-            await supabase.from('settings').update({ invoice_counter: counter }).eq('id', 1);
-            await supabase.from('orders').update({ invoice_number: invoiceNumber }).eq('id', orderId);
-        }
-
-        const money = (n) => parseFloat(n || 0).toFixed(2) + ' EUR';
-        const doc = new jsPDF();
-        const company = (settings && settings.company_name) ? settings.company_name : 'Mi Empresa';
-
-        // --- Cabecera empresa con datos fiscales ---
-        doc.setFontSize(20); doc.setTextColor(37, 99, 235);
-        doc.text(company, 15, 20);
-        doc.setFontSize(9); doc.setTextColor(90);
-        let hy = 26;
-        if (settings && settings.address) { doc.text(settings.address, 15, hy); hy += 5; }
-        if (settings && settings.tax_id) { doc.text('CIF/NIF: ' + settings.tax_id, 15, hy); hy += 5; }
-        const contactLine = [settings && settings.email, settings && settings.phone].filter(Boolean).join('  |  ');
-        if (contactLine) doc.text(contactLine, 15, hy);
-
-        // --- Bloque factura ---
-        doc.setFontSize(16); doc.setTextColor(0);
-        doc.text('FACTURA', 195, 20, { align: 'right' });
-        doc.setFontSize(10);
-        doc.text('Nº: ' + invoiceNumber, 195, 26, { align: 'right' });
-        doc.text('Pedido: ' + order.order_number, 195, 31, { align: 'right' });
-        doc.text('Fecha: ' + new Date(order.created_at).toLocaleDateString('es-ES'), 195, 36, { align: 'right' });
-
-        doc.setDrawColor(200); doc.line(15, 44, 195, 44);
-
-        // --- Facturar a con datos fiscales ---
-        doc.setFontSize(11); doc.setTextColor(0);
-        doc.text('Facturar a:', 15, 52);
-        doc.setFontSize(10); doc.setTextColor(60);
-        let cy = 58;
-        const ct = order.contacts || {};
-        doc.text(ct.name || 'Cliente', 15, cy); cy += 5;
-        if (ct.company) { doc.text(ct.company, 15, cy); cy += 5; }
-        if (ct.address) { doc.text(ct.address, 15, cy); cy += 5; }
-        if (ct.tax_id) { doc.text('CIF/NIF: ' + ct.tax_id, 15, cy); cy += 5; }
-        if (ct.email) { doc.text(ct.email, 15, cy); cy += 5; }
-
-        // --- Tabla de líneas ---
-        let y = Math.max(cy + 6, 78);
-        doc.setFillColor(37, 99, 235); doc.rect(15, y - 6, 180, 8, 'F');
-        doc.setTextColor(255); doc.setFontSize(10);
-        doc.text('Concepto', 17, y - 1);
-        doc.text('Cant.', 115, y - 1);
-        doc.text('Precio', 140, y - 1);
-        doc.text('Subtotal', 193, y - 1, { align: 'right' });
-        doc.setTextColor(0);
-        y += 6;
-
-        (items || []).forEach((it) => {
-            const name = (it.products && it.products.name) ? it.products.name : 'Producto';
-            const qty = it.quantity || 0;
-            const unit = parseFloat(it.unit_price || 0);
-            const sub = qty * unit;
-            doc.text(name.substring(0, 45), 17, y);
-            doc.text(String(qty), 115, y);
-            doc.text(money(unit), 140, y);
-            doc.text(money(sub), 193, y, { align: 'right' });
-            doc.setDrawColor(230); doc.line(15, y + 2, 195, y + 2);
-            y += 8;
-        });
-
-        // --- Desglose de IVA ---
-        const rate = parseFloat((settings && settings.iva_rate) || 21);
-        const total = parseFloat(order.total || 0);
-        const base = total / (1 + rate / 100);
-        const quota = total - base;
-
-        y += 6;
-        doc.setFontSize(10); doc.setTextColor(60);
-        doc.text('Base imponible:', 140, y); doc.text(money(base), 193, y, { align: 'right' }); y += 6;
-        doc.text('IVA (' + rate + '%):', 140, y); doc.text(money(quota), 193, y, { align: 'right' }); y += 7;
-        doc.setFontSize(13); doc.setTextColor(0);
-        doc.text('TOTAL:', 140, y); doc.text(money(total), 193, y, { align: 'right' });
-
-        // --- Forma de pago e IBAN ---
-        y += 12;
-        doc.setFontSize(9); doc.setTextColor(60);
-        doc.text('Forma de pago: Transferencia bancaria', 15, y);
-        if (settings && settings.iban) doc.text('IBAN: ' + settings.iban, 15, y + 5);
-
-        // --- Pie ---
-        doc.setFontSize(8); doc.setTextColor(140);
-        doc.text('Gracias por su compra. Documento generado automáticamente por MiCRM.', 15, 285);
-
-        doc.save('factura-' + invoiceNumber + '.pdf');
+    async editOrder(id) {
+        const { data } = await supabase.from('orders').select('*').eq('id', id).single();
+        if (!data) return;
+        document.getElementById('order-edit-id').value = data.id;
+        document.getElementById('order-edit-status').value = data.status;
+        document.getElementById('order-edit-payment').value = data.payment_method || 'transferencia';
+        document.getElementById('order-edit-discount').value = data.discount || 0;
+        document.getElementById('order-edit-shipping').value = data.shipping_address || '';
+        document.getElementById('order-edit-delivery').value = data.delivery_date || '';
+        document.getElementById('order-edit-notes').value = data.notes || '';
+        document.getElementById('order-edit-modal').style.display = 'flex';
     }
 
     async loadOrderOptions() {
@@ -811,29 +805,231 @@ class CRMApp {
 
     setupOrderEvents() {
         const modal = document.getElementById('order-modal');
+        const editModal = document.getElementById('order-edit-modal');
         document.getElementById('btn-new-order').addEventListener('click', () => modal.style.display = 'flex');
         document.getElementById('btn-cancel-order').addEventListener('click', () => modal.style.display = 'none');
+        document.getElementById('btn-cancel-order-edit').addEventListener('click', () => editModal.style.display = 'none');
+
         const updateTotal = () => {
             const productId = document.getElementById('order-product').value;
             const qty = parseInt(document.getElementById('order-quantity').value) || 0;
+            const disc = parseFloat(document.getElementById('order-discount').value) || 0;
             const product = (this.productsCache || []).find(p => p.id === productId);
-            document.getElementById('order-total').textContent = this.formatCurrency(product ? parseFloat(product.price) * qty : 0);
+            const subtotal = product ? parseFloat(product.price) * qty : 0;
+            document.getElementById('order-total').textContent = this.formatCurrency(subtotal * (1 - disc / 100));
         };
         document.getElementById('order-product').addEventListener('change', updateTotal);
         document.getElementById('order-quantity').addEventListener('input', updateTotal);
+        document.getElementById('order-discount').addEventListener('input', updateTotal);
+
         document.getElementById('order-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const productId = document.getElementById('order-product').value;
             const qty = parseInt(document.getElementById('order-quantity').value);
+            const disc = parseFloat(document.getElementById('order-discount').value) || 0;
             const product = (this.productsCache || []).find(p => p.id === productId);
             if (!product) { alert('Selecciona un producto'); return; }
-            const total = parseFloat(product.price) * qty;
-            const { data: order, error } = await supabase.from('orders').insert([{ contact_id: document.getElementById('order-contact').value, order_number: 'ORD-' + Date.now().toString().slice(-6), status: 'pending', total }]).select().single();
+            const subtotal = parseFloat(product.price) * qty;
+            const total = subtotal * (1 - disc / 100);
+            const { data: order, error } = await supabase.from('orders').insert([{
+                contact_id: document.getElementById('order-contact').value,
+                order_number: 'ORD-' + Date.now().toString().slice(-6),
+                status: 'pending',
+                total,
+                discount: disc,
+                payment_method: document.getElementById('order-payment').value,
+                shipping_address: document.getElementById('order-shipping').value,
+                delivery_date: document.getElementById('order-delivery').value || null,
+                notes: document.getElementById('order-notes').value
+            }]).select().single();
             if (error) { alert('Error: ' + error.message); return; }
             await supabase.from('order_items').insert([{ order_id: order.id, product_id: productId, quantity: qty, unit_price: parseFloat(product.price) }]);
             await supabase.from('products').update({ stock: Math.max(0, product.stock - qty) }).eq('id', productId);
             modal.style.display = 'none'; e.target.reset(); this.renderOrders();
         });
+
+        document.getElementById('order-edit-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('order-edit-id').value;
+            const { error } = await supabase.from('orders').update({
+                status: document.getElementById('order-edit-status').value,
+                payment_method: document.getElementById('order-edit-payment').value,
+                discount: parseFloat(document.getElementById('order-edit-discount').value) || 0,
+                shipping_address: document.getElementById('order-edit-shipping').value,
+                delivery_date: document.getElementById('order-edit-delivery').value || null,
+                notes: document.getElementById('order-edit-notes').value
+            }).eq('id', id);
+            if (error) alert('❌ Error: ' + error.message);
+            else { editModal.style.display = 'none'; this.renderOrders(); }
+        });
+    }
+
+    // ================= FACTURA PDF (COMPLETA) =================
+    async loadImageDataUrl(url) {
+        try {
+            const res = await fetch(url);
+            const blob = await res.blob();
+            return await new Promise((resolve, reject) => {
+                const fr = new FileReader();
+                fr.onload = () => resolve(fr.result);
+                fr.onerror = reject;
+                fr.readAsDataURL(blob);
+            });
+        } catch (e) { return null; }
+    }
+
+    async generateInvoicePDF(orderId) {
+        if (typeof window.jspdf === 'undefined') { alert('❌ Falta cargar jsPDF en index.html'); return; }
+        const { jsPDF } = window.jspdf;
+
+        const { data: order } = await supabase.from('orders').select('*, contacts(name, email, company, city, tax_id, address)').eq('id', orderId).single();
+        if (!order) { alert('Pedido no encontrado'); return; }
+        const { data: items } = await supabase.from('order_items').select('*, products(name, iva_rate)').eq('order_id', orderId);
+        const { data: settings } = await supabase.from('settings').select('*').eq('id', 1).single();
+
+        const series = (settings && settings.invoice_series) || 'F';
+        let invoiceNumber = order.invoice_number;
+        if (!invoiceNumber) {
+            const start = parseInt((settings && settings.invoice_start) || 1, 10);
+            const counter = Math.max(parseInt((settings && settings.invoice_counter) || 0, 10), start - 1) + 1;
+            const year = new Date().getFullYear();
+            invoiceNumber = series + '-' + year + '-' + String(counter).padStart(4, '0');
+            await supabase.from('settings').update({ invoice_counter: counter }).eq('id', 1);
+            await supabase.from('orders').update({ invoice_number: invoiceNumber }).eq('id', orderId);
+        }
+
+        const money = (n) => parseFloat(n || 0).toFixed(2) + ' EUR';
+        const doc = new jsPDF();
+        const company = (settings && settings.company_name) ? settings.company_name : 'Mi Empresa';
+        const defaultRate = parseFloat((settings && settings.iva_rate) || 21);
+
+        // --- Logo ---
+        let cx = 15, cy0 = 20;
+        if (settings && settings.logo_url) {
+            const dataUrl = await this.loadImageDataUrl(settings.logo_url);
+            if (dataUrl) {
+                const fmt = dataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+                const img = new Image();
+                await new Promise(r => { img.onload = r; img.src = dataUrl; });
+                const ratio = img.width / img.height || 1;
+                let h = 16, w = h * ratio;
+                if (w > 55) { w = 55; h = w / ratio; }
+                try { doc.addImage(dataUrl, fmt, 15, 10, w, h); cx = 15 + w + 5; cy0 = 18; } catch (e) {}
+            }
+        }
+
+        // --- Cabecera empresa ---
+        doc.setFontSize(18); doc.setTextColor(37, 99, 235);
+        doc.text(company, cx, cy0);
+        doc.setFontSize(9); doc.setTextColor(90);
+        let hy = cy0 + 6;
+        if (settings && settings.address) { doc.text(settings.address, cx, hy); hy += 5; }
+        if (settings && settings.tax_id) { doc.text('CIF/NIF: ' + settings.tax_id, cx, hy); hy += 5; }
+        const contactLine = [settings && settings.email, settings && settings.phone].filter(Boolean).join('  |  ');
+        if (contactLine) doc.text(contactLine, cx, hy);
+
+        // --- Bloque factura ---
+        doc.setFontSize(16); doc.setTextColor(0);
+        doc.text('FACTURA', 195, 20, { align: 'right' });
+        doc.setFontSize(10);
+        doc.text('Nº: ' + invoiceNumber, 195, 26, { align: 'right' });
+        doc.text('Pedido: ' + order.order_number, 195, 31, { align: 'right' });
+        doc.text('Fecha: ' + new Date(order.created_at).toLocaleDateString('es-ES'), 195, 36, { align: 'right' });
+
+        doc.setDrawColor(200); doc.line(15, 44, 195, 44);
+
+        // --- Facturar a / Enviar a ---
+        doc.setFontSize(11); doc.setTextColor(0);
+        doc.text('Facturar a:', 15, 52);
+        doc.setFontSize(10); doc.setTextColor(60);
+        let cy = 58;
+        const ct = order.contacts || {};
+        doc.text(ct.name || 'Cliente', 15, cy); cy += 5;
+        if (ct.company) { doc.text(ct.company, 15, cy); cy += 5; }
+        if (ct.address) { doc.text(ct.address, 15, cy); cy += 5; }
+        if (ct.tax_id) { doc.text('CIF/NIF: ' + ct.tax_id, 15, cy); cy += 5; }
+        if (ct.email) { doc.text(ct.email, 15, cy); cy += 5; }
+
+        if (order.shipping_address) {
+            doc.setFontSize(11); doc.setTextColor(0);
+            doc.text('Enviar a:', 110, 52);
+            doc.setFontSize(10); doc.setTextColor(60);
+            doc.text(order.shipping_address, 110, 58, { maxWidth: 80 });
+        }
+
+        // --- Tabla de líneas ---
+        let y = Math.max(cy + 6, 78);
+        doc.setFillColor(37, 99, 235); doc.rect(15, y - 6, 180, 8, 'F');
+        doc.setTextColor(255); doc.setFontSize(10);
+        doc.text('Concepto', 17, y - 1);
+        doc.text('Cant.', 115, y - 1);
+        doc.text('Precio', 140, y - 1);
+        doc.text('Subtotal', 193, y - 1, { align: 'right' });
+        doc.setTextColor(0);
+        y += 6;
+
+        const lines = items || [];
+        const linesSum = lines.reduce((s, it) => s + (it.quantity || 0) * parseFloat(it.unit_price || 0), 0);
+        const factor = linesSum > 0 ? (parseFloat(order.total || 0) / linesSum) : 1;
+
+        lines.forEach((it) => {
+            const name = (it.products && it.products.name) ? it.products.name : 'Producto';
+            const qty = it.quantity || 0;
+            const unit = parseFloat(it.unit_price || 0);
+            const sub = qty * unit;
+            doc.text(name.substring(0, 45), 17, y);
+            doc.text(String(qty), 115, y);
+            doc.text(money(unit), 140, y);
+            doc.text(money(sub), 193, y, { align: 'right' });
+            doc.setDrawColor(230); doc.line(15, y + 2, 195, y + 2);
+            y += 8;
+        });
+
+        // --- Descuento ---
+        const discountPct = parseFloat(order.discount || 0);
+        if (discountPct > 0) {
+            doc.setTextColor(220, 38, 38);
+            doc.text('Descuento (' + discountPct + '%):', 140, y);
+            doc.text('-' + money(linesSum - parseFloat(order.total || 0)), 193, y, { align: 'right' });
+            doc.setTextColor(0);
+            y += 7;
+        }
+
+        // --- Desglose IVA por tipo ---
+        const groups = {};
+        lines.forEach((it) => {
+            const rate = parseFloat((it.products && it.products.iva_rate) || defaultRate);
+            const sub = (it.quantity || 0) * parseFloat(it.unit_price || 0) * factor;
+            const base = sub / (1 + rate / 100);
+            if (!groups[rate]) groups[rate] = { base: 0, quota: 0 };
+            groups[rate].base += base;
+            groups[rate].quota += sub - base;
+        });
+
+        y += 4;
+        doc.setFontSize(10); doc.setTextColor(60);
+        Object.keys(groups).forEach(rate => {
+            doc.text('Base imponible (' + rate + '%):', 120, y); doc.text(money(groups[rate].base), 193, y, { align: 'right' }); y += 5;
+            doc.text('IVA (' + rate + '%):', 120, y); doc.text(money(groups[rate].quota), 193, y, { align: 'right' }); y += 6;
+        });
+        doc.setFontSize(13); doc.setTextColor(0);
+        doc.text('TOTAL:', 120, y); doc.text(money(order.total), 193, y, { align: 'right' });
+
+        // --- Pago, entrega, notas ---
+        y += 12;
+        doc.setFontSize(9); doc.setTextColor(60);
+        const payLabels = { transferencia: 'Transferencia bancaria', tarjeta: 'Tarjeta', efectivo: 'Efectivo', paypal: 'PayPal' };
+        doc.text('Forma de pago: ' + (payLabels[order.payment_method] || 'Transferencia bancaria'), 15, y);
+        if (settings && settings.iban) doc.text('IBAN: ' + settings.iban, 15, y + 5);
+        if (order.delivery_date) doc.text('Entrega estimada: ' + order.delivery_date, 15, y + 10);
+        if (order.notes) { doc.text('Observaciones: ' + order.notes, 15, y + 15, { maxWidth: 120 }); }
+
+        // --- Pie ---
+        doc.setFontSize(8); doc.setTextColor(140);
+        const footer = (settings && settings.invoice_footer) ? settings.invoice_footer : 'Gracias por su compra. Documento generado automáticamente por MiCRM.';
+        doc.text(footer, 15, 285, { maxWidth: 180 });
+
+        doc.save('factura-' + invoiceNumber + '.pdf');
     }
 
     // ================= REPORTES CON CHART.JS =================
@@ -1002,6 +1198,25 @@ class CRMApp {
                 </div>
                 <div>
                     <div class="card">
+                        <div class="card-header"><h3><i class="fas fa-file-invoice"></i> Facturación</h3></div>
+                        <div class="card-body">
+                            <form id="invoice-form" class="settings-form">
+                                <label>Logo de la empresa (PDF)</label>
+                                <input type="file" id="set-logo" accept="image/*">
+                                <img id="set-logo-preview" style="max-width:120px;margin-top:8px;display:none;border-radius:6px;">
+                                <input type="hidden" id="set-logo-url">
+                                <label>Serie de factura</label>
+                                <input type="text" id="set-series" value="F" placeholder="F">
+                                <label>Número de inicio</label>
+                                <input type="number" id="set-start" value="1" min="1">
+                                <label>Texto legal / pie de factura</label>
+                                <textarea id="set-footer" rows="3" placeholder="Gracias por su compra..."></textarea>
+                                <div class="modal-actions"><button type="submit" class="btn btn-primary">Guardar Facturación</button></div>
+                                <p id="invoice-saved" class="saved-msg"></p>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="card">
                         <div class="card-header"><h3><i class="fas fa-plug"></i> Conexión Supabase</h3></div>
                         <div class="card-body">
                             <p class="settings-url" id="set-url"></p>
@@ -1029,8 +1244,27 @@ class CRMApp {
             document.getElementById('set-iban').value = data.iban || '';
             document.getElementById('set-iva').value = data.iva_rate || 21;
             document.getElementById('set-currency').value = data.currency || 'EUR';
+            document.getElementById('set-series').value = data.invoice_series || 'F';
+            document.getElementById('set-start').value = data.invoice_start || 1;
+            document.getElementById('set-footer').value = data.invoice_footer || '';
+            document.getElementById('set-logo-url').value = data.logo_url || '';
+            const lp = document.getElementById('set-logo-preview');
+            if (data.logo_url) { lp.src = data.logo_url; lp.style.display = 'block'; }
         }
         document.getElementById('set-url').textContent = '🔗 ' + supabase.supabaseUrl;
+
+        document.getElementById('set-logo').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const fileName = `config/logo-${Date.now()}-${file.name}`;
+            const { error } = await supabase.storage.from('product-images').upload(fileName, file);
+            if (error) { alert('Error al subir logo: ' + error.message); return; }
+            const { data: urlData } = supabase.storage.from('product-images').getPublicUrl(fileName);
+            document.getElementById('set-logo-url').value = urlData.publicUrl;
+            const lp = document.getElementById('set-logo-preview');
+            lp.src = urlData.publicUrl; lp.style.display = 'block';
+        });
+
         document.getElementById('settings-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const { error } = await supabase.from('settings').update({
@@ -1047,6 +1281,20 @@ class CRMApp {
             msg.textContent = error ? '❌ Error al guardar' : '✅ Cambios guardados';
             setTimeout(() => msg.textContent = '', 2500);
         });
+
+        document.getElementById('invoice-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const { error } = await supabase.from('settings').update({
+                logo_url: document.getElementById('set-logo-url').value || null,
+                invoice_series: document.getElementById('set-series').value || 'F',
+                invoice_start: parseInt(document.getElementById('set-start').value) || 1,
+                invoice_footer: document.getElementById('set-footer').value
+            }).eq('id', 1);
+            const msg = document.getElementById('invoice-saved');
+            msg.textContent = error ? '❌ Error al guardar' : '✅ Facturación guardada';
+            setTimeout(() => msg.textContent = '', 2500);
+        });
+
         document.getElementById('btn-test-connection').addEventListener('click', async () => {
             const result = document.getElementById('connection-result');
             result.textContent = '⏳ Probando...';
