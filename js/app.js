@@ -300,6 +300,7 @@ class CRMApp {
                 <tbody>
                     ${data.map(p => `
                         <tr>
+                                                    <td>${p.image_url ? `<img src="${p.image_url}" style="width:50px;height:50px;object-fit:cover;border-radius:6px;">` : '—'}</td>
                             <td><strong>${p.name}</strong></td>
                             <td>${p.category || '—'}</td>
                             <td><strong>${this.formatCurrency(parseFloat(p.price))}</strong></td>
