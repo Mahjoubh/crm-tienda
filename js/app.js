@@ -2020,6 +2020,132 @@ class CRMApp {
         if (error) alert('❌ ' + error.message);
         else this.renderSocial();
     }
+    // ================= PLANIFICADOR DE PUBLICACIONES =================
+    postsDict() {
+        return {
+            es: { title:'Planificador de publicaciones', add:'Nueva publicación', network:'Red', date:'Fecha', time:'Hora', content:'Contenido', contentPh:'Escribe el texto del post...', image:'Imagen', status:'Estado', idea:'Idea', scheduled:'Programada', published:'Publicada', allStatus:'Todos los estados', allNetworks:'Todas las redes', empty:'No hay publicaciones.', cancel:'Cancelar', save:'Guardar', edit:'Editar', del:'Eliminar', actions:'Acciones' },
+            fr: { title:'Planificateur de publications', add:'Nouvelle publication', network:'Réseau', date:'Date', time:'Heure', content:'Contenu', contentPh:'Écris le texte du post...', image:'Image', status:'Statut', idea:'Idée', scheduled:'Planifiée', published:'Publiée', allStatus:'Tous les statuts', allNetworks:'Tous les réseaux', empty:'Aucune publication.', cancel:'Annuler', save:'Enregistrer', edit:'Modifier', del:'Supprimer', actions:'Actions' },
+            ar: { title:'مخطط المنشورات', add:'منشور جديد', network:'الشبكة', date:'التاريخ', time:'الوقت', content:'المحتوى', contentPh:'اكتب نص المنشور...', image:'صورة', status:'الحالة', idea:'فكرة', scheduled:'مجدول', published:'منشور', allStatus:'كل الحالات', allNetworks:'كل الشبكات', empty:'لا توجد منشورات.', cancel:'إلغاء', save:'حفظ', edit:'تعديل', del:'حذف', actions:'إجراءات' }
+        };
+    }
+
+    ptxt(k) {
+        const d = this.postsDict();
+        const L = this.lang || 'es';
+        return (d[L] && d[L][k]) || d.es[k] || k;
+    }
+
+    postStatusMeta() {
+        return {
+            idea: { label: '💡 ' + this.ptxt('idea'), cls: 'priority-low' },
+            scheduled: { label: '🕒 ' + this.ptxt('scheduled'), cls: 'priority-medium' },
+            published: { label: '✅ ' + this.ptxt('published'), cls: 'contact-active' }
+        };
+    }
+
+    async renderPosts() {
+        const container = document.getElementById('posts-container');
+        if (!container) return;
+        const fs = document.getElementById('post-filter-status');
+        const fn = document.getElementById('post-filter-network');
+        let q = supabase.from('social_posts').select('*').order('post_date', { ascending: false });
+        if (fs && fs.value) q = q.eq('status', fs.value);
+        if (fn && fn.value) q = q.eq('network', fn.value);
+        const { data, error } = await q;
+        if (error) { container.innerHTML = '<p class="error">❌ ' + error.message + '</p>'; return; }
+        if (!data || data.length === 0) { container.innerHTML = '<p>' + this.ptxt('empty') + '</p>'; return; }
+        const meta = this.socialMeta();
+        const st = this.postStatusMeta();
+        container.innerHTML = `
+            <table class="data-table">
+                <thead><tr><th>${this.ptxt('network')}</th><th>${this.ptxt('date')}</th><th>${this.ptxt('content')}</th><th>${this.ptxt('image')}</th><th>${this.ptxt('status')}</th><th>${this.ptxt('actions')}</th></tr></thead>
+                <tbody>
+                    ${data.map(o => {
+                        const m = meta[o.network] || { icon: 'fa-globe', color: '#6b7280', label: o.network };
+                        const s = st[o.status] || st.idea;
+                        return `
+                        <tr>
+                            <td><i class="fab ${m.icon}" style="color:${m.color};margin-right:6px;"></i>${m.label}</td>
+                            <td>${o.post_date || '—'}${o.post_time ? ' ' + o.post_time : ''}</td>
+                            <td>${(o.content || '').substring(0, 60)}${(o.content || '').length > 60 ? '…' : ''}</td>
+                            <td>${o.image_url ? `<img src="${o.image_url}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;">` : '—'}</td>
+                            <td><span class="badge ${s.cls}">${s.label}</span></td>
+                            <td>
+                                <button class="btn-edit btn-post-edit" data-id="${o.id}"><i class="fas fa-edit"></i></button>
+                                <button class="btn-delete btn-post-del" data-id="${o.id}"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>`;
+                    }).join('')}
+                </tbody>
+            </table>
+        `;
+        container.querySelectorAll('.btn-post-edit').forEach(b => b.addEventListener('click', () => this.editPost(b.dataset.id)));
+        container.querySelectorAll('.btn-post-del').forEach(b => b.addEventListener('click', () => this.deletePost(b.dataset.id)));
+    }
+
+    setupPostEvents() {
+        const modal = document.getElementById('post-modal');
+        document.getElementById('btn-new-post').addEventListener('click', () => {
+            document.getElementById('post-modal-title').textContent = this.ptxt('add');
+            document.getElementById('post-form').reset();
+            document.getElementById('post-id').value = '';
+            document.getElementById('post-image-url').value = '';
+            document.getElementById('post-image-preview').style.display = 'none';
+            modal.style.display = 'flex';
+        });
+        document.getElementById('btn-cancel-post').addEventListener('click', () => modal.style.display = 'none');
+        document.getElementById('post-filter-status').addEventListener('change', () => this.renderPosts());
+        document.getElementById('post-filter-network').addEventListener('change', () => this.renderPosts());
+        document.getElementById('post-image').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const fileName = `social/${Date.now()}-${file.name}`;
+            const { error } = await supabase.storage.from('product-images').upload(fileName, file);
+            if (error) { alert('❌ ' + error.message); return; }
+            const { data: urlData } = supabase.storage.from('product-images').getPublicUrl(fileName);
+            document.getElementById('post-image-url').value = urlData.publicUrl;
+            const pv = document.getElementById('post-image-preview');
+            pv.src = urlData.publicUrl; pv.style.display = 'block';
+        });
+        document.getElementById('post-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('post-id').value;
+            const row = {
+                network: document.getElementById('post-network').value,
+                post_date: document.getElementById('post-date').value || null,
+                post_time: document.getElementById('post-time').value || null,
+                content: document.getElementById('post-content').value,
+                image_url: document.getElementById('post-image-url').value || null,
+                status: document.getElementById('post-status').value
+            };
+            const { error } = id ? await supabase.from('social_posts').update(row).eq('id', id) : await supabase.from('social_posts').insert([row]);
+            if (error) alert('❌ ' + error.message);
+            else { modal.style.display = 'none'; e.target.reset(); this.renderPosts(); }
+        });
+    }
+
+    async editPost(id) {
+        const { data } = await supabase.from('social_posts').select('*').eq('id', id).single();
+        if (!data) return;
+        document.getElementById('post-modal-title').textContent = this.ptxt('edit');
+        document.getElementById('post-id').value = data.id;
+        document.getElementById('post-network').value = data.network;
+        document.getElementById('post-date').value = data.post_date || '';
+        document.getElementById('post-time').value = data.post_time || '';
+        document.getElementById('post-content').value = data.content || '';
+        document.getElementById('post-image-url').value = data.image_url || '';
+        const pv = document.getElementById('post-image-preview');
+        if (data.image_url) { pv.src = data.image_url; pv.style.display = 'block'; } else { pv.src = ''; pv.style.display = 'none'; }
+        document.getElementById('post-status').value = data.status || 'idea';
+        document.getElementById('post-modal').style.display = 'flex';
+    }
+
+    async deletePost(id) {
+        if (!confirm(this.ptxt('del') + '?')) return;
+        const { error } = await supabase.from('social_posts').delete().eq('id', id);
+        if (error) alert('❌ ' + error.message);
+        else this.renderPosts();
+    }
 
     formatDate(date) { return new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(date)); }
     formatCurrency(amount) { return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(amount); }
