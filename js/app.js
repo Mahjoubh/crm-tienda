@@ -67,16 +67,53 @@ class CRMApp {
         }
     }
 
-    async checkAuth() {
+        async checkAuth() {
+        const loginOverlay = document.getElementById('login-overlay');
+        const mainContent = document.querySelector('.main-content');
+        const sidebar = document.querySelector('.sidebar');
+
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
+                loginOverlay.classList.add('hidden');
+                mainContent.style.display = 'flex';
+                sidebar.style.display = 'flex';
+
                 const userMenu = document.querySelector('.user-menu span');
                 if (userMenu) userMenu.textContent = user.email.split('@')[0];
+            } else {
+                loginOverlay.classList.remove('hidden');
+                mainContent.style.display = 'none';
+                sidebar.style.display = 'none';
             }
         } catch (e) {
-            console.log('Sin autenticación');
+            loginOverlay.classList.remove('hidden');
+            mainContent.style.display = 'none';
+            sidebar.style.display = 'none';
         }
+        this.setupLogin();
+    }
+
+    setupLogin() {
+        const form = document.getElementById('login-form');
+        const errorEl = document.getElementById('login-error');
+        if (!form) return;
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            errorEl.textContent = 'Iniciando sesión...';
+
+            const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+            if (error) {
+                errorEl.textContent = '❌ Email o contraseña incorrectos';
+            } else {
+                errorEl.textContent = '';
+                this.checkAuth();
+            }
+        });
     }
 
     // ================= TICKETS =================
