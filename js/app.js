@@ -107,7 +107,7 @@ class CRMApp {
         }
     }
 
-    // 🔓 LOGIN DESACTIVADO TEMPORALMENTE
+        // 🔓 LOGIN DESACTIVADO TEMPORALMENTE
     async checkAuth() {
         const loginOverlay = document.getElementById('login-overlay');
         const mainContent = document.querySelector('.main-content');
@@ -115,9 +115,78 @@ class CRMApp {
         if (loginOverlay) loginOverlay.classList.add('hidden');
         if (mainContent) mainContent.style.display = '';
         if (sidebar) sidebar.style.display = '';
+
+        const userName = 'Desarrollo';
         const userMenu = document.querySelector('.user-menu span');
-        if (userMenu) userMenu.textContent = 'Desarrollo';
+        if (userMenu) userMenu.textContent = userName;
+
+        // Avatar con iniciales (sustituye la imagen rota)
+        const userMenuBox = document.querySelector('.user-menu');
+        if (userMenuBox) {
+            const badImg = userMenuBox.querySelector('img');
+            if (badImg) badImg.remove();
+            if (!userMenuBox.querySelector('.avatar-init')) {
+                const av = document.createElement('div');
+                av.className = 'avatar-init';
+                av.style.cssText = 'width:36px;height:36px;border-radius:50%;background:#3b82f6;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;margin-right:8px;flex:none;';
+                av.textContent = (userName || 'U').charAt(0).toUpperCase();
+                if (userMenu) userMenuBox.insertBefore(av, userMenu);
+                else userMenuBox.appendChild(av);
+            }
+        }
+
+        await this.setupNotifications();
         this.setupLogin();
+    }
+
+    // 🔔 Notificaciones reales en la campana
+    async setupNotifications() {
+        const icon = document.querySelector('.user-menu i.fa-bell') || document.querySelector('i.fa-bell');
+        if (!icon) return;
+        const bellWrap = icon.parentElement;
+        if (!bellWrap) return;
+
+        const [prod, pend, open] = await Promise.all([
+            supabase.from('products').select('id, name, stock, min_stock'),
+            supabase.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+            supabase.from('tickets').select('id', { count: 'exact', head: true }).in('status', ['open', 'in_progress'])
+        ]);
+
+        const items = [];
+        (prod.data || []).forEach(p => {
+            const min = p.min_stock != null ? p.min_stock : 5;
+            if (p.stock <= min) items.push('📦 Stock bajo: ' + p.name + ' (' + p.stock + ')');
+        });
+        if (pend.count) items.push('🛒 ' + pend.count + ' pedido(s) pendiente(s)');
+        if (open.count) items.push('🎫 ' + open.count + ' ticket(s) abierto(s)');
+
+        let badge = bellWrap.querySelector('span');
+        if (!badge) { badge = document.createElement('span'); bellWrap.appendChild(badge); }
+        badge.textContent = items.length;
+        badge.style.display = items.length > 0 ? '' : 'none';
+
+        bellWrap.style.cursor = 'pointer';
+        bellWrap.onclick = (e) => {
+            e.stopPropagation();
+            const existing = document.getElementById('notif-panel');
+            if (existing) { existing.remove(); return; }
+            const panel = document.createElement('div');
+            panel.id = 'notif-panel';
+            panel.style.cssText = 'position:fixed;right:16px;top:60px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.15);width:300px;padding:12px;z-index:999;color:#111827;';
+            panel.innerHTML = '<strong style="font-size:13px;">🔔 Notificaciones</strong>' +
+                '<div style="margin-top:8px;font-size:13px;color:#374151;max-height:260px;overflow:auto;">' +
+                (items.length ? items.map(i => '<div style="padding:7px 0;border-bottom:1px solid #f3f4f6;">' + i + '</div>').join('') : '<div style="padding:7px 0;">Sin notificaciones. ✅</div>') +
+                '</div>';
+            document.body.appendChild(panel);
+        };
+
+        if (!this._notifOutsideBound) {
+            this._notifOutsideBound = true;
+            document.addEventListener('click', (e) => {
+                const panel = document.getElementById('notif-panel');
+                if (panel && !panel.contains(e.target) && !bellWrap.contains(e.target)) panel.remove();
+            });
+        }
     }
 
     setupLogin() {
