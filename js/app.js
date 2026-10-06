@@ -1837,6 +1837,7 @@ class CRMApp {
     async loadSocial() {
         const content = document.querySelector('.content');
         const t = (k) => this.stxt(k);
+        const p = (k) => this.ptxt(k);
         content.innerHTML = `
             <div class="card">
                 <div class="card-header">
@@ -1844,6 +1845,34 @@ class CRMApp {
                     <button class="btn btn-primary" id="btn-new-social"><i class="fas fa-plus"></i> ${t('add')}</button>
                 </div>
                 <div class="card-body"><div id="social-container"><p>Cargando...</p></div></div>
+            </div>
+            <div class="card" style="margin-top:18px;">
+                <div class="card-header">
+                    <h3><i class="fas fa-calendar-alt"></i> ${p('title')}</h3>
+                    <button class="btn btn-primary" id="btn-new-post"><i class="fas fa-plus"></i> ${p('add')}</button>
+                </div>
+                <div class="card-body">
+                    <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+                        <select id="post-filter-status" style="padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;">
+                            <option value="">${p('allStatus')}</option>
+                            <option value="idea">💡 ${p('idea')}</option>
+                            <option value="scheduled">🕒 ${p('scheduled')}</option>
+                            <option value="published">✅ ${p('published')}</option>
+                        </select>
+                        <select id="post-filter-network" style="padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;">
+                            <option value="">${p('allNetworks')}</option>
+                            <option value="instagram">Instagram</option>
+                            <option value="facebook">Facebook</option>
+                            <option value="tiktok">TikTok</option>
+                            <option value="linkedin">LinkedIn</option>
+                            <option value="x">X</option>
+                            <option value="youtube">YouTube</option>
+                            <option value="threads">Threads</option>
+                            <option value="pinterest">Pinterest</option>
+                        </select>
+                    </div>
+                    <div id="posts-container"><p>Cargando...</p></div>
+                </div>
             </div>
             <div class="modal-overlay" id="social-modal">
                 <div class="modal">
@@ -1874,9 +1903,50 @@ class CRMApp {
                     </form>
                 </div>
             </div>
+            <div class="modal-overlay" id="post-modal">
+                <div class="modal">
+                    <h3 id="post-modal-title">${p('add')}</h3>
+                    <form id="post-form">
+                        <input type="hidden" id="post-id">
+                        <label>${p('network')}</label>
+                        <select id="post-network">
+                            <option value="instagram">Instagram</option>
+                            <option value="facebook">Facebook</option>
+                            <option value="tiktok">TikTok</option>
+                            <option value="linkedin">LinkedIn</option>
+                            <option value="x">X</option>
+                            <option value="youtube">YouTube</option>
+                            <option value="threads">Threads</option>
+                            <option value="pinterest">Pinterest</option>
+                        </select>
+                        <label>${p('date')}</label>
+                        <input type="date" id="post-date">
+                        <label>${p('time')}</label>
+                        <input type="time" id="post-time">
+                        <label>${p('content')}</label>
+                        <textarea id="post-content" rows="3" placeholder="${p('contentPh')}"></textarea>
+                        <label>${p('image')}</label>
+                        <input type="file" id="post-image" accept="image/*">
+                        <img id="post-image-preview" style="max-width:120px;margin-top:8px;display:none;border-radius:6px;">
+                        <input type="hidden" id="post-image-url">
+                        <label>${p('status')}</label>
+                        <select id="post-status">
+                            <option value="idea">💡 ${p('idea')}</option>
+                            <option value="scheduled">🕒 ${p('scheduled')}</option>
+                            <option value="published">✅ ${p('published')}</option>
+                        </select>
+                        <div class="modal-actions">
+                            <button type="button" class="btn btn-secondary" id="btn-cancel-post">${p('cancel')}</button>
+                            <button type="submit" class="btn btn-primary">${p('save')}</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         `;
         this.renderSocial();
+        this.renderPosts();
         this.setupSocialEvents();
+        this.setupPostEvents();
     }
 
     async renderSocial() {
