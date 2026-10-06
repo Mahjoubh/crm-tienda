@@ -1036,6 +1036,91 @@ class CRMApp {
             }
         }
     }
+    // ================= CHAT DE TICKETS =================
+    async openTicketChat(ticketId) {
+        // Obtener datos del ticket
+        const { data: ticket } = await supabase.from('tickets').select('subject, contacts(name)').eq('id', ticketId).single();
+        const clientName = ticket?.contacts?.name || 'Cliente';
+
+        // Crear modal de chat dinámicamente
+        const modalHTML = `
+            <div class="modal-overlay" id="chat-modal" style="display:flex;">
+                <div class="modal chat-modal">
+                    <div class="chat-header">
+                        <h3><i class="fas fa-comments"></i> Chat: ${ticket?.subject || 'Ticket'}</h3>
+                        <button id="close-chat" style="background:none;border:none;font-size:20px;cursor:pointer;color:#6b7280;">✕</button>
+                    </div>
+                    <div class="chat-history" id="chat-history">
+                        <p style="text-align:center;color:#9ca3af;">Cargando mensajes...</p>
+                    </div>
+                    <form id="chat-form" class="chat-input-area">
+                        <select id="chat-sender-type" style="width:120px;">
+                            <option value="admin">‍💼 Agente</option>
+                            <option value="client"> ${clientName}</option>
+                        </select>
+                        <input type="text" id="chat-message-input" placeholder="Escribe un mensaje..." required autocomplete="off">
+                        <button type="submit" class="btn btn-primary">Enviar</button>
+                    </form>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+        document.getElementById('close-chat').addEventListener('click', () => document.getElementById('chat-modal').remove());
+
+        // Cargar mensajes
+        this.loadChatMessages(ticketId);
+
+        // Enviar mensaje
+        document.getElementById('chat-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const input = document.getElementById('chat-message-input');
+            const senderType = document.getElementById('chat-sender-type').value;
+            const message = input.value.trim();
+            if (!message) return;
+
+            const senderName = senderType === 'admin' ? 'Agente de Soporte' : clientName;
+            const isAdmin = senderType === 'admin';
+
+            const { error } = await supabase.from('ticket_messages').insert([{
+                ticket_id: ticketId,
+                sender_name: senderName,
+                message: message,
+                is_admin: isAdmin
+            }]);
+
+            if (error) {
+                alert('Error al enviar: ' + error.message);
+            } else {
+                input.value = '';
+                this.loadChatMessages(ticketId);
+            }
+        });
+    }
+
+    async loadChatMessages(ticketId) {
+        const history = document.getElementById('chat-history');
+        const { data, error } = await supabase
+            .from('ticket_messages')
+            .select('*')
+            .eq('ticket_id', ticketId)
+            .order('created_at', { ascending: true });
+
+        if (error || !data || data.length === 0) {
+            history.innerHTML = '<p style="text-align:center;color:#9ca3af;margin-top:20px;">Aún no hay mensajes en este ticket.</p>';
+            return;
+        }
+
+        history.innerHTML = data.map(m => `
+            <div class="chat-bubble ${m.is_admin ? 'admin' : 'client'}">
+                <div class="chat-sender">${m.sender_name} <span class="chat-time">${this.formatDate(m.created_at)}</span></div>
+                <div class="chat-text">${m.message}</div>
+            </div>
+        `).join('');
+
+        // Auto-scroll al final
+        history.scrollTop = history.scrollHeight;
+    }
 
     // Utilidades
     formatDate(date) {
