@@ -342,7 +342,7 @@ class CRMApp {
   
     cleanPhone(p) { return (p || '').replace(/\D/g, ''); }
 
-    async openWhatsAppModal(opts) {
+     async openWhatsAppModal(opts) {
         const { data: settings } = await supabase.from('settings').select('company_name').eq('id', 1).single();
         const vars = {
             nombre: opts.name || '',
@@ -389,7 +389,7 @@ class CRMApp {
             const message = msgBox.value.trim();
             if (!phone) { alert('Pon un teléfono con prefijo (ej: 34600000000)'); return; }
             if (!message) { alert('Escribe un mensaje o elige una plantilla'); return; }
-            window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(message), '_blank');
+            this.openLink('https://wa.me/' + phone + '?text=' + encodeURIComponent(message));
             await supabase.from('whatsapp_logs').insert([{
                 contact_id: opts.contactId || null,
                 phone: phone,
