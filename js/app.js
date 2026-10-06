@@ -12,7 +12,7 @@ class CRMApp {
         this.setupMenuToggle();
         this.setupGlobalSearch();
         await this.checkAuth();
-        console.log(' CRM + Tienda Online iniciado');
+        console.log('CRM + Tienda Online iniciado');
     }
 
     setupNavigation() {
@@ -82,28 +82,16 @@ class CRMApp {
         }
     }
 
+    // 🔓 LOGIN DESACTIVADO TEMPORALMENTE (entra directo al CRM)
     async checkAuth() {
         const loginOverlay = document.getElementById('login-overlay');
         const mainContent = document.querySelector('.main-content');
         const sidebar = document.querySelector('.sidebar');
-        try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-                loginOverlay.classList.add('hidden');
-                mainContent.style.display = '';
-                sidebar.style.display = '';
-                const userMenu = document.querySelector('.user-menu span');
-                if (userMenu) userMenu.textContent = user.email.split('@')[0];
-            } else {
-                loginOverlay.classList.remove('hidden');
-                mainContent.style.display = 'none';
-                sidebar.style.display = 'none';
-            }
-        } catch (e) {
-            loginOverlay.classList.remove('hidden');
-            mainContent.style.display = 'none';
-            sidebar.style.display = 'none';
-        }
+        if (loginOverlay) loginOverlay.classList.add('hidden');
+        if (mainContent) mainContent.style.display = '';
+        if (sidebar) sidebar.style.display = '';
+        const userMenu = document.querySelector('.user-menu span');
+        if (userMenu) userMenu.textContent = 'Desarrollo';
         this.setupLogin();
     }
 
@@ -300,7 +288,7 @@ class CRMApp {
                 <tbody>
                     ${data.map(p => `
                         <tr>
-                                                    <td>${p.image_url ? `<img src="${p.image_url}" style="width:50px;height:50px;object-fit:cover;border-radius:6px;">` : '—'}</td>
+                            <td>${p.image_url ? `<img src="${p.image_url}" style="width:50px;height:50px;object-fit:cover;border-radius:6px;">` : '—'}</td>
                             <td><strong>${p.name}</strong></td>
                             <td>${p.category || '—'}</td>
                             <td><strong>${this.formatCurrency(parseFloat(p.price))}</strong></td>
@@ -334,6 +322,9 @@ class CRMApp {
         document.getElementById('product-price').value = data.price;
         document.getElementById('product-stock').value = data.stock;
         document.getElementById('product-category').value = data.category || '';
+        const preview = document.getElementById('product-image-preview');
+        if (data.image_url) { preview.src = data.image_url; preview.style.display = 'block'; }
+        else { preview.src = ''; preview.style.display = 'none'; }
         document.getElementById('product-modal').style.display = 'flex';
     }
 
@@ -345,79 +336,22 @@ class CRMApp {
     }
 
     setupProductEvents() {
-    const modal = document.getElementById('product-modal');
-    document.getElementById('btn-new-product').addEventListener('click', () => {
-        document.getElementById('product-modal-title').textContent = 'Nuevo Producto';
-        document.getElementById('product-form').reset();
-        document.getElementById('product-id').value = '';
-        modal.style.display = 'flex';
-    });
-    document.getElementById('btn-cancel-product').addEventListener('click', () => modal.style.display = 'none');
-    
-    // Preview de imagen al seleccionar
-    document.getElementById('product-image').addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const preview = document.getElementById('product-image-preview');
-                preview.src = e.target.result;
-                preview.style.display = 'block';
-            };
-            reader.readAsDataURL(file);
-        }
-    });
-    
-    document.getElementById('product-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const id = document.getElementById('product-id').value;
-        
-        // ✅ PRIMERO declaramos productData (antes estaba después y crasheaba)
-        const productData = {
-            name: document.getElementById('product-name').value,
-            description: document.getElementById('product-description').value,
-            price: parseFloat(document.getElementById('product-price').value),
-            stock: parseInt(document.getElementById('product-stock').value),
-            category: document.getElementById('product-category').value,
-            active: true,
-            image_url: null
-        };
-        
-        // Subir imagen si hay archivo
-        const imageFile = document.getElementById('product-image').files[0];
-        if (imageFile) {
-            const fileName = `${Date.now()}-${imageFile.name}`;
-            const { error: uploadError } = await supabase.storage
-                .from('product-images')
-                .upload(fileName, imageFile);
-            
-            if (uploadError) {
-                alert('Error al subir imagen: ' + uploadError.message);
-                return;
-            }
-            
-            const { data: { publicUrl } } = supabase.storage
-                .from('product-images')
-                .getPublicUrl(fileName);
-            
-            productData.image_url = publicUrl;
-        }
-        
-        // Guardar en base de datos
-        const { error } = id ? await supabase.from('products').update(productData).eq('id', id) : await supabase.from('products').insert([productData]);
-        if (error) alert('❌ Error: ' + error.message);
-        else { modal.style.display = 'none'; e.target.reset(); this.renderProducts(); }
-    });
-}
+        const modal = document.getElementById('product-modal');
+        document.getElementById('btn-new-product').addEventListener('click', () => {
+            document.getElementById('product-modal-title').textContent = 'Nuevo Producto';
+            document.getElementById('product-form').reset();
+            document.getElementById('product-id').value = '';
+            document.getElementById('product-image-preview').style.display = 'none';
+            modal.style.display = 'flex';
+        });
         document.getElementById('btn-cancel-product').addEventListener('click', () => modal.style.display = 'none');
-                // Preview de imagen al seleccionar
         document.getElementById('product-image').addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
-                reader.onload = (e) => {
+                reader.onload = (ev) => {
                     const preview = document.getElementById('product-image-preview');
-                    preview.src = e.target.result;
+                    preview.src = ev.target.result;
                     preview.style.display = 'block';
                 };
                 reader.readAsDataURL(file);
@@ -426,26 +360,36 @@ class CRMApp {
         document.getElementById('product-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('product-id').value;
-                        // Subir imagen si hay archivo
+
+            // ✅ productData declarado ANTES de usarse (este era el bug)
+            const productData = {
+                name: document.getElementById('product-name').value,
+                description: document.getElementById('product-description').value,
+                price: parseFloat(document.getElementById('product-price').value),
+                stock: parseInt(document.getElementById('product-stock').value),
+                category: document.getElementById('product-category').value,
+                active: true
+            };
+
             const imageFile = document.getElementById('product-image').files[0];
             if (imageFile) {
                 const fileName = `${Date.now()}-${imageFile.name}`;
                 const { error: uploadError } = await supabase.storage
                     .from('product-images')
                     .upload(fileName, imageFile);
-                
+
                 if (uploadError) {
                     alert('Error al subir imagen: ' + uploadError.message);
                     return;
                 }
-                
+
                 const { data: { publicUrl } } = supabase.storage
                     .from('product-images')
                     .getPublicUrl(fileName);
-                
+
                 productData.image_url = publicUrl;
             }
-            const id = document.getElementById('product-id').value;
+
             const { error } = id ? await supabase.from('products').update(productData).eq('id', id) : await supabase.from('products').insert([productData]);
             if (error) alert('❌ Error: ' + error.message);
             else { modal.style.display = 'none'; e.target.reset(); this.renderProducts(); }
@@ -765,7 +709,7 @@ class CRMApp {
             if (!product) { alert('Selecciona un producto'); return; }
             const total = parseFloat(product.price) * qty;
             const { data: order, error } = await supabase.from('orders').insert([{ contact_id: document.getElementById('order-contact').value, order_number: 'ORD-' + Date.now().toString().slice(-6), status: 'pending', total }]).select().single();
-            if (error) { alert(' Error: ' + error.message); return; }
+            if (error) { alert('Error: ' + error.message); return; }
             await supabase.from('order_items').insert([{ order_id: order.id, product_id: productId, quantity: qty, unit_price: parseFloat(product.price) }]);
             await supabase.from('products').update({ stock: Math.max(0, product.stock - qty) }).eq('id', productId);
             modal.style.display = 'none'; e.target.reset(); this.renderOrders();
@@ -924,7 +868,7 @@ class CRMApp {
         document.getElementById('btn-export').addEventListener('click', async () => {
             const [c, t, p, o] = await Promise.all([supabase.from('contacts').select('*'), supabase.from('tickets').select('*'), supabase.from('products').select('*'), supabase.from('orders').select('*')]);
             const backup = { exported_at: new Date().toISOString(), contacts: c.data, tickets: t.data, products: p.data, orders: o.data };
-            const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+            const blob = new Blob([JSON.stringify(backup, null, 2), ], { type: 'application/json' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
             a.download = 'crm-backup-' + new Date().toISOString().slice(0, 10) + '.json';
