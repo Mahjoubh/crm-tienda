@@ -954,6 +954,85 @@ class CRMApp {
             a.click();
         });
     }
+    // ================= DASHBOARD REAL =================
+    async loadDashboardReal() {
+        // 1. Obtener contadores reales
+        const { count: openTickets } = await supabase
+            .from('tickets')
+            .select('*', { count: 'exact', head: true })
+            .in('status', ['open', 'in_progress']);
+
+        const { count: totalContacts } = await supabase
+            .from('contacts')
+            .select('*', { count: 'exact', head: true });
+
+        const { count: pendingOrders } = await supabase
+            .from('orders')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'pending');
+
+        const { data: orders } = await supabase
+            .from('orders')
+            .select('total')
+            .neq('status', 'cancelled');
+
+        const totalRevenue = orders ? orders.reduce((sum, o) => sum + parseFloat(o.total), 0) : 0;
+
+        // 2. Actualizar tarjetas de estadísticas
+        const statNumbers = document.querySelectorAll('.stat-number');
+        if (statNumbers.length >= 4) {
+            statNumbers[0].textContent = openTickets || 0;
+            statNumbers[1].textContent = totalContacts || 0;
+            statNumbers[2].textContent = pendingOrders || 0;
+            statNumbers[3].textContent = this.formatCurrency(totalRevenue);
+        }
+
+        // 3. Cargar tickets recientes reales
+        const { data: recentTickets } = await supabase
+            .from('tickets')
+            .select('*, contacts(name)')
+            .order('created_at', { ascending: false })
+            .limit(3);
+
+        if (recentTickets && recentTickets.length > 0) {
+            const ticketList = document.querySelector('.ticket-list');
+            if (ticketList) {
+                const statusLabels = { open: 'Abierto', in_progress: 'En Progreso', resolved: 'Resuelto', closed: 'Cerrado' };
+                ticketList.innerHTML = recentTickets.map(t => `
+                    <div class="ticket-item">
+                        <div class="ticket-info">
+                            <h4>#${t.id.slice(0, 8)} - ${t.subject}</h4>
+                            <p class="ticket-meta">${t.contacts ? t.contacts.name : '—'} • ${this.formatDate(t.created_at)}</p>
+                        </div>
+                        <span class="badge status-${t.status === 'in_progress' ? 'progress' : t.status}">${statusLabels[t.status] || t.status}</span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // 4. Cargar pedidos recientes reales
+        const { data: recentOrders } = await supabase
+            .from('orders')
+            .select('*, contacts(name)')
+            .order('created_at', { ascending: false })
+            .limit(3);
+
+        if (recentOrders && recentOrders.length > 0) {
+            const orderList = document.querySelector('.order-list');
+            if (orderList) {
+                const statusLabels = { pending: 'Pendiente', processing: 'Procesando', shipped: 'Enviado', delivered: 'Entregado', cancelled: 'Cancelado' };
+                orderList.innerHTML = recentOrders.map(o => `
+                    <div class="order-item">
+                        <div class="order-info">
+                            <h4>Pedido #${o.order_number}</h4>
+                            <p class="order-meta">${o.contacts ? o.contacts.name : '—'} • ${this.formatCurrency(parseFloat(o.total))}</p>
+                        </div>
+                        <span class="badge status-${o.status}">${statusLabels[o.status] || o.status}</span>
+                    </div>
+                `).join('');
+            }
+        }
+    }
 
     // Utilidades
     formatDate(date) {
