@@ -76,8 +76,8 @@ class CRMApp {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
                 loginOverlay.classList.add('hidden');
-                mainContent.style.display = 'flex';
-                sidebar.style.display = 'flex';
+                mainContent.style.display = '';
+                sidebar.style.display = '';
 
                 const userMenu = document.querySelector('.user-menu span');
                 if (userMenu) userMenu.textContent = user.email.split('@')[0];
