@@ -15,6 +15,7 @@ class CRMApp {
         this.setupGlobalSearch();
         await this.checkAuth();
         this.setupSoundAndRealtime();
+        this.fixStoreButton();
         console.log('CRM + Tienda Online iniciado');
     }
 
