@@ -524,6 +524,7 @@ class CRMApp {
                             </td>
                             <td>${this.formatDate(t.created_at)}</td>
                             <td>
+                            <button class="btn-chat" data-id="${t.id}"><i class="fas fa-comments"></i></button>
                                 <button class="btn-edit" data-id="${t.id}"><i class="fas fa-edit"></i></button>
                                 <button class="btn-delete" data-id="${t.id}"><i class="fas fa-trash"></i></button>
                             </td>
