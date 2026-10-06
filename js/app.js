@@ -4,6 +4,7 @@ class CRMApp {
     constructor() {
         this.dashboardHTML = document.querySelector('.content').innerHTML;
         this.currentPage = 'dashboard';
+        this.charts = {};
         this.init();
     }
 
@@ -361,7 +362,6 @@ class CRMApp {
             e.preventDefault();
             const id = document.getElementById('product-id').value;
 
-            // ✅ productData declarado ANTES de usarse (este era el bug)
             const productData = {
                 name: document.getElementById('product-name').value,
                 description: document.getElementById('product-description').value,
@@ -561,7 +561,7 @@ class CRMApp {
                     </div>
                     <form id="chat-form" class="chat-input-area">
                         <select id="chat-sender-type" style="width:120px;">
-                            <option value="admin">👨‍💼 Agente</option>
+                            <option value="admin">👨‍ Agente</option>
                             <option value="client">👤 ${clientName}</option>
                         </select>
                         <input type="text" id="chat-message-input" placeholder="Escribe un mensaje..." required autocomplete="off">
@@ -716,44 +716,102 @@ class CRMApp {
         });
     }
 
-    // ================= REPORTES =================
+    // ================= REPORTES CON CHART.JS =================
     async loadReports() {
         const content = document.querySelector('.content');
         content.innerHTML = '<p>Cargando reportes...</p>';
+
+        if (typeof Chart === 'undefined') {
+            content.innerHTML = '<div class="card"><div class="card-body"><p>❌ Falta cargar Chart.js en index.html</p></div></div>';
+            return;
+        }
+
+        // Destruir gráficas anteriores para evitar duplicados
+        Object.values(this.charts).forEach(ch => { try { ch.destroy(); } catch (e) {} });
+        this.charts = {};
+
+        // Cargar datos reales
         const { data: tickets } = await supabase.from('tickets').select('status');
         const { data: contacts } = await supabase.from('contacts').select('id');
-        const { data: orders } = await supabase.from('orders').select('total, status');
-        const { data: items } = await supabase.from('order_items').select('quantity');
+        const { data: orders } = await supabase.from('orders').select('total, status, created_at');
+        const { data: items } = await supabase.from('order_items').select('quantity, products(name)');
+
         const t = tickets || [], c = contacts || [], o = orders || [], it = items || [];
+
         const openTickets = t.filter(x => x.status === 'open' || x.status === 'in_progress').length;
         const resolvedTickets = t.filter(x => x.status === 'resolved' || x.status === 'closed').length;
         const revenue = o.filter(x => x.status !== 'cancelled').reduce((sum, x) => sum + parseFloat(x.total), 0);
         const unitsSold = it.reduce((sum, x) => sum + x.quantity, 0);
-        const statusLabels = { open: 'Abierto', in_progress: 'En Progreso', resolved: 'Resuelto', closed: 'Cerrado', pending: 'Pendiente', processing: 'Procesando', shipped: 'Enviado', delivered: 'Entregado', cancelled: 'Cancelado' };
-        const barBlock = (title, statuses, arr, colorClass) => `
-            <div class="card">
-                <div class="card-header"><h3>${title}</h3></div>
-                <div class="card-body">
-                    ${statuses.map(s => {
-                        const n = arr.filter(x => x.status === s).length;
-                        const pct = arr.length ? Math.round((n / arr.length) * 100) : 0;
-                        return `<div class="report-bar-row"><span class="report-label">${statusLabels[s]}</span><div class="report-bar"><div class="report-bar-fill ${colorClass}" style="width: ${pct}%"></div></div><span class="report-value">${n}</span></div>`;
-                    }).join('')}
-                </div>
-            </div>
-        `;
+
+        // Ingresos por mes (últimos 6 meses)
+        const monthLabels = [], revenueByMonth = [];
+        const now = new Date();
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+            monthLabels.push(d.toLocaleDateString('es-ES', { month: 'short' }));
+            const sum = o.filter(x => x.status !== 'cancelled' && x.created_at && x.created_at.slice(0, 7) === key)
+                         .reduce((s, x) => s + parseFloat(x.total), 0);
+            revenueByMonth.push(sum);
+        }
+
+        // Top 5 productos más vendidos
+        const prodMap = {};
+        it.forEach(x => {
+            const name = (x.products && x.products.name) ? x.products.name : 'Producto';
+            prodMap[name] = (prodMap[name] || 0) + x.quantity;
+        });
+        const top = Object.entries(prodMap).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+        // Conteos por estado
+        const orderStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+        const orderLabels = ['Pendiente', 'Procesando', 'Enviado', 'Entregado', 'Cancelado'];
+        const orderCounts = orderStatuses.map(s => o.filter(x => x.status === s).length);
+
+        const ticketStatuses = ['open', 'in_progress', 'resolved', 'closed'];
+        const ticketLabels = ['Abierto', 'En Progreso', 'Resuelto', 'Cerrado'];
+        const ticketCounts = ticketStatuses.map(s => t.filter(x => x.status === s).length);
+
         content.innerHTML = `
             <div class="stats-grid">
                 <div class="stat-card"><div class="stat-icon" style="background: #3b82f6;"><i class="fas fa-ticket-alt"></i></div><div class="stat-info"><h3>Tickets Abiertos</h3><p class="stat-number">${openTickets}</p><span class="stat-change positive">${resolvedTickets} resueltos</span></div></div>
                 <div class="stat-card"><div class="stat-icon" style="background: #10b981;"><i class="fas fa-users"></i></div><div class="stat-info"><h3>Clientes</h3><p class="stat-number">${c.length}</p></div></div>
-                <div class="stat-card"><div class="stat-icon" style="background: #f59e0b;"><i class="fas fa-shopping-cart"></i></div><div class="stat-info"><h3>Pedidos</h3><p class="stat-number">${o.length}</p><span class="stat-change positive">${unitsSold} unidades</span></div></div>
+                <div class="stat-card"><div class="stat-icon" style="background: #f59e0b;"><i class="fas fa-shopping-cart"></i></div><div class="stat-info"><h3>Unidades Vendidas</h3><p class="stat-number">${unitsSold}</p></div></div>
                 <div class="stat-card"><div class="stat-icon" style="background: #8b5cf6;"><i class="fas fa-euro-sign"></i></div><div class="stat-info"><h3>Ingresos</h3><p class="stat-number">${this.formatCurrency(revenue)}</p></div></div>
             </div>
             <div class="grid-2col">
-                ${barBlock('<i class="fas fa-ticket-alt"></i> Tickets por Estado', ['open', 'in_progress', 'resolved', 'closed'], t, 'bar-blue')}
-                ${barBlock('<i class="fas fa-shopping-cart"></i> Pedidos por Estado', ['pending', 'processing', 'shipped', 'delivered', 'cancelled'], o, 'bar-green')}
+                <div class="card"><div class="card-header"><h3>💰 Ingresos por mes</h3></div><div class="card-body"><div style="position:relative;height:260px;"><canvas id="chart-revenue"></canvas></div></div></div>
+                <div class="card"><div class="card-header"><h3>📦 Pedidos por estado</h3></div><div class="card-body"><div style="position:relative;height:260px;"><canvas id="chart-orders"></canvas></div></div></div>
+                <div class="card"><div class="card-header"><h3>🎫 Tickets por estado</h3></div><div class="card-body"><div style="position:relative;height:260px;"><canvas id="chart-tickets"></canvas></div></div></div>
+                <div class="card"><div class="card-header"><h3>🏆 Top productos vendidos</h3></div><div class="card-body"><div style="position:relative;height:260px;"><canvas id="chart-top"></canvas></div></div></div>
             </div>
         `;
+
+        const palette = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'];
+
+        this.charts.revenue = new Chart(document.getElementById('chart-revenue'), {
+            type: 'line',
+            data: { labels: monthLabels, datasets: [{ label: 'Ingresos (€)', data: revenueByMonth, borderColor: '#8b5cf6', backgroundColor: 'rgba(139,92,246,0.15)', fill: true, tension: 0.35, pointRadius: 4 }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+        });
+
+        this.charts.orders = new Chart(document.getElementById('chart-orders'), {
+            type: 'bar',
+            data: { labels: orderLabels, datasets: [{ label: 'Pedidos', data: orderCounts, backgroundColor: palette }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+        });
+
+        this.charts.tickets = new Chart(document.getElementById('chart-tickets'), {
+            type: 'doughnut',
+            data: { labels: ticketLabels, datasets: [{ data: ticketCounts, backgroundColor: palette }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+        });
+
+        this.charts.top = new Chart(document.getElementById('chart-top'), {
+            type: 'bar',
+            data: { labels: top.map(x => x[0]), datasets: [{ label: 'Unidades', data: top.map(x => x[1]), backgroundColor: '#10b981' }] },
+            options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } }
+        });
     }
 
     // ================= DASHBOARD REAL =================
@@ -868,7 +926,7 @@ class CRMApp {
         document.getElementById('btn-export').addEventListener('click', async () => {
             const [c, t, p, o] = await Promise.all([supabase.from('contacts').select('*'), supabase.from('tickets').select('*'), supabase.from('products').select('*'), supabase.from('orders').select('*')]);
             const backup = { exported_at: new Date().toISOString(), contacts: c.data, tickets: t.data, products: p.data, orders: o.data };
-            const blob = new Blob([JSON.stringify(backup, null, 2), ], { type: 'application/json' });
+            const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
             a.download = 'crm-backup-' + new Date().toISOString().slice(0, 10) + '.json';
