@@ -345,13 +345,70 @@ class CRMApp {
     }
 
     setupProductEvents() {
-        const modal = document.getElementById('product-modal');
-        document.getElementById('btn-new-product').addEventListener('click', () => {
-            document.getElementById('product-modal-title').textContent = 'Nuevo Producto';
-            document.getElementById('product-form').reset();
-            document.getElementById('product-id').value = '';
-            modal.style.display = 'flex';
-        });
+    const modal = document.getElementById('product-modal');
+    document.getElementById('btn-new-product').addEventListener('click', () => {
+        document.getElementById('product-modal-title').textContent = 'Nuevo Producto';
+        document.getElementById('product-form').reset();
+        document.getElementById('product-id').value = '';
+        modal.style.display = 'flex';
+    });
+    document.getElementById('btn-cancel-product').addEventListener('click', () => modal.style.display = 'none');
+    
+    // Preview de imagen al seleccionar
+    document.getElementById('product-image').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const preview = document.getElementById('product-image-preview');
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+    
+    document.getElementById('product-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('product-id').value;
+        
+        // ✅ PRIMERO declaramos productData (antes estaba después y crasheaba)
+        const productData = {
+            name: document.getElementById('product-name').value,
+            description: document.getElementById('product-description').value,
+            price: parseFloat(document.getElementById('product-price').value),
+            stock: parseInt(document.getElementById('product-stock').value),
+            category: document.getElementById('product-category').value,
+            active: true,
+            image_url: null
+        };
+        
+        // Subir imagen si hay archivo
+        const imageFile = document.getElementById('product-image').files[0];
+        if (imageFile) {
+            const fileName = `${Date.now()}-${imageFile.name}`;
+            const { error: uploadError } = await supabase.storage
+                .from('product-images')
+                .upload(fileName, imageFile);
+            
+            if (uploadError) {
+                alert('Error al subir imagen: ' + uploadError.message);
+                return;
+            }
+            
+            const { data: { publicUrl } } = supabase.storage
+                .from('product-images')
+                .getPublicUrl(fileName);
+            
+            productData.image_url = publicUrl;
+        }
+        
+        // Guardar en base de datos
+        const { error } = id ? await supabase.from('products').update(productData).eq('id', id) : await supabase.from('products').insert([productData]);
+        if (error) alert('❌ Error: ' + error.message);
+        else { modal.style.display = 'none'; e.target.reset(); this.renderProducts(); }
+    });
+}
         document.getElementById('btn-cancel-product').addEventListener('click', () => modal.style.display = 'none');
                 // Preview de imagen al seleccionar
         document.getElementById('product-image').addEventListener('change', (e) => {
