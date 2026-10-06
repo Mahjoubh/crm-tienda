@@ -330,7 +330,16 @@ class CRMApp {
     fillWhatsAppTemplate(text, vars) {
         return text.replace(/\{(\w+)\}/g, (m, k) => (vars[k] != null && vars[k] !== '') ? vars[k] : '');
     }
-
+    openLink(url) {
+        const a = document.createElement('a');
+        a.href = url;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+    }
+  
     cleanPhone(p) { return (p || '').replace(/\D/g, ''); }
 
     async openWhatsAppModal(opts) {
