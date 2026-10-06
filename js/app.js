@@ -651,7 +651,7 @@ class CRMApp {
         const statusLabels = { pending: 'Pendiente', processing: 'Procesando', shipped: 'Enviado', delivered: 'Entregado', cancelled: 'Cancelado' };
         container.innerHTML = `
             <table class="data-table">
-                <thead><tr><th>Nº Pedido</th><th>Cliente</th><th>Total</th><th>Estado</th><th>Fecha</th></tr></thead>
+                <thead><tr><th>Nº Pedido</th><th>Cliente</th><th>Total</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead>
                 <tbody>
                     ${data.map(o => `
                         <tr>
@@ -664,6 +664,9 @@ class CRMApp {
                                 </select>
                             </td>
                             <td>${this.formatDate(o.created_at)}</td>
+                            <td>
+                                <button class="btn-edit btn-invoice" data-id="${o.id}" title="Descargar factura en PDF">📄</button>
+                            </td>
                         </tr>
                     `).join('')}
                 </tbody>
@@ -675,6 +678,85 @@ class CRMApp {
                 if (error) alert('Error: ' + error.message);
             });
         });
+        container.querySelectorAll('.btn-invoice').forEach(btn => btn.addEventListener('click', () => this.generateInvoicePDF(btn.dataset.id)));
+    }
+
+    // ================= FACTURA PDF =================
+    async generateInvoicePDF(orderId) {
+        if (typeof window.jspdf === 'undefined') { alert('❌ Falta cargar jsPDF en index.html'); return; }
+        const { jsPDF } = window.jspdf;
+
+        const { data: order } = await supabase.from('orders').select('*, contacts(name, email, company, city)').eq('id', orderId).single();
+        if (!order) { alert('Pedido no encontrado'); return; }
+        const { data: items } = await supabase.from('order_items').select('*, products(name)').eq('order_id', orderId);
+        const { data: settings } = await supabase.from('settings').select('*').eq('id', 1).single();
+
+        const money = (n) => parseFloat(n || 0).toFixed(2) + ' EUR';
+        const doc = new jsPDF();
+        const company = (settings && settings.company_name) ? settings.company_name : 'Mi Empresa';
+
+        // Encabezado empresa
+        doc.setFontSize(20); doc.setTextColor(37, 99, 235);
+        doc.text(company, 15, 20);
+        doc.setFontSize(10); doc.setTextColor(90);
+        if (settings && settings.email) doc.text(settings.email, 15, 26);
+        if (settings && settings.phone) doc.text(settings.phone, 15, 31);
+
+        // Bloque factura
+        doc.setFontSize(16); doc.setTextColor(0);
+        doc.text('FACTURA', 195, 20, { align: 'right' });
+        doc.setFontSize(10);
+        doc.text('Nº: ' + order.order_number, 195, 26, { align: 'right' });
+        doc.text('Fecha: ' + new Date(order.created_at).toLocaleDateString('es-ES'), 195, 31, { align: 'right' });
+
+        doc.setDrawColor(200); doc.line(15, 38, 195, 38);
+
+        // Facturar a
+        doc.setFontSize(11); doc.setTextColor(0);
+        doc.text('Facturar a:', 15, 46);
+        doc.setFontSize(10); doc.setTextColor(60);
+        doc.text((order.contacts && order.contacts.name) ? order.contacts.name : 'Cliente', 15, 52);
+        if (order.contacts && order.contacts.email) doc.text(order.contacts.email, 15, 57);
+        if (order.contacts && order.contacts.company) doc.text(order.contacts.company, 15, 62);
+
+        // Cabecera tabla
+        let y = 72;
+        doc.setFillColor(37, 99, 235); doc.rect(15, y - 6, 180, 8, 'F');
+        doc.setTextColor(255); doc.setFontSize(10);
+        doc.text('Concepto', 17, y - 1);
+        doc.text('Cant.', 115, y - 1);
+        doc.text('Precio', 140, y - 1);
+        doc.text('Subtotal', 193, y - 1, { align: 'right' });
+        doc.setTextColor(0);
+        y += 6;
+
+        // Filas
+        const lines = items || [];
+        lines.forEach((it) => {
+            const name = (it.products && it.products.name) ? it.products.name : 'Producto';
+            const qty = it.quantity || 0;
+            const unit = parseFloat(it.unit_price || 0);
+            const sub = qty * unit;
+            doc.text(name.substring(0, 45), 17, y);
+            doc.text(String(qty), 115, y);
+            doc.text(money(unit), 140, y);
+            doc.text(money(sub), 193, y, { align: 'right' });
+            doc.setDrawColor(230); doc.line(15, y + 2, 195, y + 2);
+            y += 8;
+        });
+
+        // Total
+        y += 4;
+        doc.setDrawColor(0); doc.line(120, y, 195, y);
+        y += 8;
+        doc.setFontSize(13);
+        doc.text('TOTAL: ' + money(order.total), 193, y, { align: 'right' });
+
+        // Pie
+        doc.setFontSize(8); doc.setTextColor(140);
+        doc.text('Gracias por su compra. Documento generado automáticamente por MiCRM.', 15, 285);
+
+        doc.save('factura-' + order.order_number + '.pdf');
     }
 
     async loadOrderOptions() {
@@ -726,11 +808,9 @@ class CRMApp {
             return;
         }
 
-        // Destruir gráficas anteriores para evitar duplicados
         Object.values(this.charts).forEach(ch => { try { ch.destroy(); } catch (e) {} });
         this.charts = {};
 
-        // Cargar datos reales
         const { data: tickets } = await supabase.from('tickets').select('status');
         const { data: contacts } = await supabase.from('contacts').select('id');
         const { data: orders } = await supabase.from('orders').select('total, status, created_at');
@@ -743,7 +823,6 @@ class CRMApp {
         const revenue = o.filter(x => x.status !== 'cancelled').reduce((sum, x) => sum + parseFloat(x.total), 0);
         const unitsSold = it.reduce((sum, x) => sum + x.quantity, 0);
 
-        // Ingresos por mes (últimos 6 meses)
         const monthLabels = [], revenueByMonth = [];
         const now = new Date();
         for (let i = 5; i >= 0; i--) {
@@ -755,7 +834,6 @@ class CRMApp {
             revenueByMonth.push(sum);
         }
 
-        // Top 5 productos más vendidos
         const prodMap = {};
         it.forEach(x => {
             const name = (x.products && x.products.name) ? x.products.name : 'Producto';
@@ -763,7 +841,6 @@ class CRMApp {
         });
         const top = Object.entries(prodMap).sort((a, b) => b[1] - a[1]).slice(0, 5);
 
-        // Conteos por estado
         const orderStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
         const orderLabels = ['Pendiente', 'Procesando', 'Enviado', 'Entregado', 'Cancelado'];
         const orderCounts = orderStatuses.map(s => o.filter(x => x.status === s).length);
