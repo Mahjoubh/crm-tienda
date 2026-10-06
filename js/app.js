@@ -214,7 +214,9 @@ class CRMApp {
                 </tbody>
             </table>
         `;
-
+        container.querySelectorAll('.btn-chat').forEach(btn => {
+            btn.addEventListener('click', () => this.openTicketChat(btn.dataset.id));
+        });
         container.querySelectorAll('.btn-edit').forEach(btn => {
             btn.addEventListener('click', () => this.editContact(btn.dataset.id));
         });
