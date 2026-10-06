@@ -1,15 +1,16 @@
-// CRM + Tienda Online - Lógica principal
 import { supabase } from './supabase-config.js';
 
 class CRMApp {
     constructor() {
         this.dashboardHTML = document.querySelector('.content').innerHTML;
+        this.currentPage = 'dashboard';
         this.init();
     }
 
     async init() {
         this.setupNavigation();
         this.setupMenuToggle();
+        this.setupGlobalSearch();
         await this.checkAuth();
         console.log('🚀 CRM + Tienda Online iniciado');
     }
@@ -35,7 +36,23 @@ class CRMApp {
         }
     }
 
+    setupGlobalSearch() {
+        const searchInput = document.getElementById('global-search');
+        if (!searchInput) return;
+
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase().trim();
+            if (query.length < 2) return;
+
+            // Buscar en la página actual
+            if (this.currentPage === 'contacts') this.searchContacts(query);
+            if (this.currentPage === 'products') this.searchProducts(query);
+            if (this.currentPage === 'tickets') this.searchTickets(query);
+        });
+    }
+
     async loadPage(pageId) {
+        this.currentPage = pageId;
         switch (pageId) {
             case 'dashboard':
                 document.querySelector('.content').innerHTML = this.dashboardHTML;
@@ -52,7 +69,7 @@ class CRMApp {
             case 'orders':
                 await this.loadOrders();
                 break;
-             case 'reports':
+            case 'reports':
                 await this.loadReports();
                 break;
             case 'settings':
@@ -67,7 +84,7 @@ class CRMApp {
         }
     }
 
-        async checkAuth() {
+    async checkAuth() {
         const loginOverlay = document.getElementById('login-overlay');
         const mainContent = document.querySelector('.main-content');
         const sidebar = document.querySelector('.sidebar');
@@ -116,6 +133,315 @@ class CRMApp {
         });
     }
 
+    // ================= CONTACTOS =================
+    async loadContacts() {
+        const content = document.querySelector('.content');
+        content.innerHTML = `
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-address-book"></i> Gestión de Contactos</h3>
+                    <button class="btn btn-primary" id="btn-new-contact"><i class="fas fa-plus"></i> Nuevo Cliente</button>
+                </div>
+                <div class="card-body">
+                    <div id="contacts-container"><p>Cargando contactos...</p></div>
+                </div>
+            </div>
+
+            <div class="modal-overlay" id="contact-modal">
+                <div class="modal">
+                    <h3 id="contact-modal-title">Nuevo Cliente</h3>
+                    <form id="contact-form">
+                        <input type="hidden" id="contact-id">
+                        <label>Nombre completo</label>
+                        <input type="text" id="contact-name" required placeholder="Ej: Ana García">
+                        <label>Email</label>
+                        <input type="email" id="contact-email" required placeholder="ana@empresa.com">
+                        <label>Teléfono</label>
+                        <input type="text" id="contact-phone" placeholder="+34 600 000 000">
+                        <label>Empresa</label>
+                        <input type="text" id="contact-company" placeholder="Nombre de la empresa">
+                        <label>Ciudad</label>
+                        <input type="text" id="contact-city" placeholder="Madrid">
+                        <div class="modal-actions">
+                            <button type="button" class="btn btn-secondary" id="btn-cancel-contact">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Guardar Cliente</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+        this.renderContacts();
+        this.setupContactEvents();
+    }
+
+    async renderContacts(contacts = null) {
+        const container = document.getElementById('contacts-container');
+        const { data, error } = contacts ? { data: contacts, error: null } : await supabase.from('contacts').select('*').order('name');
+
+        if (error) {
+            container.innerHTML = '<p class="error">❌ Error: ' + error.message + '</p>';
+            return;
+        }
+
+        if (!data || data.length === 0) {
+            container.innerHTML = '<p>No hay contactos. Crea el primero con "Nuevo Cliente".</p>';
+            return;
+        }
+
+        const statusLabels = { active: 'Activo', lead: 'Lead', inactive: 'Inactivo' };
+
+        container.innerHTML = `
+            <table class="data-table">
+                <thead>
+                    <tr><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Empresa</th><th>Ciudad</th><th>Estado</th><th>Acciones</th></tr>
+                </thead>
+                <tbody>
+                    ${data.map(c => `
+                        <tr>
+                            <td><strong>${c.name}</strong></td>
+                            <td>${c.email}</td>
+                            <td>${c.phone || '—'}</td>
+                            <td>${c.company || '—'}</td>
+                            <td>${c.city || '—'}</td>
+                            <td><span class="badge contact-${c.status}">${statusLabels[c.status] || c.status}</span></td>
+                            <td>
+                                <button class="btn-edit" data-id="${c.id}"><i class="fas fa-edit"></i></button>
+                                <button class="btn-delete" data-id="${c.id}"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+
+        container.querySelectorAll('.btn-edit').forEach(btn => {
+            btn.addEventListener('click', () => this.editContact(btn.dataset.id));
+        });
+        container.querySelectorAll('.btn-delete').forEach(btn => {
+            btn.addEventListener('click', () => this.deleteContact(btn.dataset.id));
+        });
+    }
+
+    async searchContacts(query) {
+        const { data } = await supabase.from('contacts').select('*').ilike('name', `%${query}%`);
+        this.renderContacts(data);
+    }
+
+    async editContact(id) {
+        const { data } = await supabase.from('contacts').select('*').eq('id', id).single();
+        if (!data) return;
+
+        document.getElementById('contact-modal-title').textContent = 'Editar Cliente';
+        document.getElementById('contact-id').value = data.id;
+        document.getElementById('contact-name').value = data.name;
+        document.getElementById('contact-email').value = data.email;
+        document.getElementById('contact-phone').value = data.phone || '';
+        document.getElementById('contact-company').value = data.company || '';
+        document.getElementById('contact-city').value = data.city || '';
+        document.getElementById('contact-modal').style.display = 'flex';
+    }
+
+    async deleteContact(id) {
+        if (!confirm('¿Seguro que quieres eliminar este cliente?')) return;
+        const { error } = await supabase.from('contacts').delete().eq('id', id);
+        if (error) alert('Error: ' + error.message);
+        else this.renderContacts();
+    }
+
+    setupContactEvents() {
+        const modal = document.getElementById('contact-modal');
+        document.getElementById('btn-new-contact').addEventListener('click', () => {
+            document.getElementById('contact-modal-title').textContent = 'Nuevo Cliente';
+            document.getElementById('contact-form').reset();
+            document.getElementById('contact-id').value = '';
+            modal.style.display = 'flex';
+        });
+        document.getElementById('btn-cancel-contact').addEventListener('click', () => modal.style.display = 'none');
+
+        document.getElementById('contact-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('contact-id').value;
+            const contactData = {
+                name: document.getElementById('contact-name').value,
+                email: document.getElementById('contact-email').value,
+                phone: document.getElementById('contact-phone').value,
+                company: document.getElementById('contact-company').value,
+                city: document.getElementById('contact-city').value,
+                status: 'active'
+            };
+
+            const { error } = id
+                ? await supabase.from('contacts').update(contactData).eq('id', id)
+                : await supabase.from('contacts').insert([contactData]);
+
+            if (error) alert('❌ Error: ' + error.message);
+            else {
+                modal.style.display = 'none';
+                e.target.reset();
+                this.renderContacts();
+            }
+        });
+    }
+
+    // ================= PRODUCTOS =================
+    async loadProducts() {
+        const content = document.querySelector('.content');
+        content.innerHTML = `
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-box"></i> Catálogo de Productos</h3>
+                    <button class="btn btn-primary" id="btn-new-product"><i class="fas fa-plus"></i> Nuevo Producto</button>
+                </div>
+                <div class="card-body">
+                    <div id="products-container"><p>Cargando productos...</p></div>
+                </div>
+            </div>
+
+            <div class="modal-overlay" id="product-modal">
+                <div class="modal">
+                    <h3 id="product-modal-title">Nuevo Producto</h3>
+                    <form id="product-form">
+                        <input type="hidden" id="product-id">
+                        <label>Nombre del producto</label>
+                        <input type="text" id="product-name" required placeholder="Ej: Teclado inalámbrico">
+                        <label>Descripción</label>
+                        <textarea id="product-description" rows="2" placeholder="Descripción corta"></textarea>
+                        <label>Precio (€)</label>
+                        <input type="number" id="product-price" step="0.01" min="0" required placeholder="49.99">
+                        <label>Stock</label>
+                        <input type="number" id="product-stock" min="0" required placeholder="20">
+                        <label>Categoría</label>
+                        <input type="text" id="product-category" placeholder="Electrónica">
+                        <div class="modal-actions">
+                            <button type="button" class="btn btn-secondary" id="btn-cancel-product">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Guardar Producto</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+        this.renderProducts();
+        this.setupProductEvents();
+    }
+
+    async renderProducts(products = null) {
+        const container = document.getElementById('products-container');
+        const { data, error } = products ? { data: products, error: null } : await supabase.from('products').select('*').order('name');
+
+        if (error) {
+            container.innerHTML = '<p class="error">❌ Error: ' + error.message + '</p>';
+            return;
+        }
+
+        if (!data || data.length === 0) {
+            container.innerHTML = '<p>No hay productos. Crea el primero con "Nuevo Producto".</p>';
+            return;
+        }
+
+        container.innerHTML = `
+            <table class="data-table">
+                <thead>
+                    <tr><th>Producto</th><th>Categoría</th><th>Precio</th><th>Stock</th><th>Estado</th><th>Acciones</th></tr>
+                </thead>
+                <tbody>
+                    ${data.map(p => `
+                        <tr>
+                            <td><strong>${p.name}</strong></td>
+                            <td>${p.category || '—'}</td>
+                            <td><strong>${this.formatCurrency(parseFloat(p.price))}</strong></td>
+                            <td>${p.stock}</td>
+                            <td><span class="badge ${this.stockBadge(p.stock)}">${this.stockLabel(p.stock)}</span></td>
+                            <td>
+                                <button class="btn-edit" data-id="${p.id}"><i class="fas fa-edit"></i></button>
+                                <button class="btn-delete" data-id="${p.id}"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+
+        container.querySelectorAll('.btn-edit').forEach(btn => {
+            btn.addEventListener('click', () => this.editProduct(btn.dataset.id));
+        });
+        container.querySelectorAll('.btn-delete').forEach(btn => {
+            btn.addEventListener('click', () => this.deleteProduct(btn.dataset.id));
+        });
+    }
+
+    async searchProducts(query) {
+        const { data } = await supabase.from('products').select('*').ilike('name', `%${query}%`);
+        this.renderProducts(data);
+    }
+
+    async editProduct(id) {
+        const { data } = await supabase.from('products').select('*').eq('id', id).single();
+        if (!data) return;
+
+        document.getElementById('product-modal-title').textContent = 'Editar Producto';
+        document.getElementById('product-id').value = data.id;
+        document.getElementById('product-name').value = data.name;
+        document.getElementById('product-description').value = data.description || '';
+        document.getElementById('product-price').value = data.price;
+        document.getElementById('product-stock').value = data.stock;
+        document.getElementById('product-category').value = data.category || '';
+        document.getElementById('product-modal').style.display = 'flex';
+    }
+
+    async deleteProduct(id) {
+        if (!confirm('¿Seguro que quieres eliminar este producto?')) return;
+        const { error } = await supabase.from('products').delete().eq('id', id);
+        if (error) alert('Error: ' + error.message);
+        else this.renderProducts();
+    }
+
+    setupProductEvents() {
+        const modal = document.getElementById('product-modal');
+        document.getElementById('btn-new-product').addEventListener('click', () => {
+            document.getElementById('product-modal-title').textContent = 'Nuevo Producto';
+            document.getElementById('product-form').reset();
+            document.getElementById('product-id').value = '';
+            modal.style.display = 'flex';
+        });
+        document.getElementById('btn-cancel-product').addEventListener('click', () => modal.style.display = 'none');
+
+        document.getElementById('product-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('product-id').value;
+            const productData = {
+                name: document.getElementById('product-name').value,
+                description: document.getElementById('product-description').value,
+                price: parseFloat(document.getElementById('product-price').value),
+                stock: parseInt(document.getElementById('product-stock').value),
+                category: document.getElementById('product-category').value,
+                active: true
+            };
+
+            const { error } = id
+                ? await supabase.from('products').update(productData).eq('id', id)
+                : await supabase.from('products').insert([productData]);
+
+            if (error) alert('❌ Error: ' + error.message);
+            else {
+                modal.style.display = 'none';
+                e.target.reset();
+                this.renderProducts();
+            }
+        });
+    }
+
+    stockBadge(stock) {
+        if (stock <= 0) return 'stock-out';
+        if (stock <= 10) return 'stock-low';
+        return 'stock-ok';
+    }
+
+    stockLabel(stock) {
+        if (stock <= 0) return 'Agotado';
+        if (stock <= 10) return 'Stock bajo';
+        return 'En stock';
+    }
+
     // ================= TICKETS =================
     async loadTickets() {
         const content = document.querySelector('.content');
@@ -132,8 +458,9 @@ class CRMApp {
 
             <div class="modal-overlay" id="ticket-modal">
                 <div class="modal">
-                    <h3>Nuevo Ticket</h3>
+                    <h3 id="ticket-modal-title">Nuevo Ticket</h3>
                     <form id="ticket-form">
+                        <input type="hidden" id="ticket-id">
                         <label>Cliente</label>
                         <select id="ticket-contact" required><option value="">Cargando...</option></select>
                         <label>Asunto</label>
@@ -159,12 +486,9 @@ class CRMApp {
         this.setupTicketEvents();
     }
 
-    async renderTickets() {
+    async renderTickets(tickets = null) {
         const container = document.getElementById('tickets-container');
-        const { data, error } = await supabase
-            .from('tickets')
-            .select('*, contacts(name, email)')
-            .order('created_at', { ascending: false });
+        const { data, error } = tickets ? { data: tickets, error: null } : await supabase.from('tickets').select('*, contacts(name, email)').order('created_at', { ascending: false });
 
         if (error) {
             container.innerHTML = '<p class="error">❌ Error: ' + error.message + '</p>';
@@ -182,7 +506,7 @@ class CRMApp {
         container.innerHTML = `
             <table class="data-table">
                 <thead>
-                    <tr><th>Asunto</th><th>Cliente</th><th>Prioridad</th><th>Estado</th><th>Fecha</th></tr>
+                    <tr><th>Asunto</th><th>Cliente</th><th>Prioridad</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr>
                 </thead>
                 <tbody>
                     ${data.map(t => `
@@ -198,6 +522,10 @@ class CRMApp {
                                 </select>
                             </td>
                             <td>${this.formatDate(t.created_at)}</td>
+                            <td>
+                                <button class="btn-edit" data-id="${t.id}"><i class="fas fa-edit"></i></button>
+                                <button class="btn-delete" data-id="${t.id}"><i class="fas fa-trash"></i></button>
+                            </td>
                         </tr>
                     `).join('')}
                 </tbody>
@@ -206,13 +534,41 @@ class CRMApp {
 
         container.querySelectorAll('.status-select').forEach(select => {
             select.addEventListener('change', async (e) => {
-                const { error } = await supabase
-                    .from('tickets')
-                    .update({ status: e.target.value })
-                    .eq('id', e.target.dataset.id);
+                const { error } = await supabase.from('tickets').update({ status: e.target.value }).eq('id', e.target.dataset.id);
                 if (error) alert('Error al actualizar: ' + error.message);
             });
         });
+
+        container.querySelectorAll('.btn-edit').forEach(btn => {
+            btn.addEventListener('click', () => this.editTicket(btn.dataset.id));
+        });
+        container.querySelectorAll('.btn-delete').forEach(btn => {
+            btn.addEventListener('click', () => this.deleteTicket(btn.dataset.id));
+        });
+    }
+
+    async searchTickets(query) {
+        const { data } = await supabase.from('tickets').select('*, contacts(name, email)').ilike('subject', `%${query}%`);
+        this.renderTickets(data);
+    }
+
+    async editTicket(id) {
+        const { data } = await supabase.from('tickets').select('*').eq('id', id).single();
+        if (!data) return;
+
+        document.getElementById('ticket-modal-title').textContent = 'Editar Ticket';
+        document.getElementById('ticket-id').value = data.id;
+        document.getElementById('ticket-subject').value = data.subject;
+        document.getElementById('ticket-description').value = data.description || '';
+        document.getElementById('ticket-priority').value = data.priority;
+        document.getElementById('ticket-modal').style.display = 'flex';
+    }
+
+    async deleteTicket(id) {
+        if (!confirm('¿Seguro que quieres eliminar este ticket?')) return;
+        const { error } = await supabase.from('tickets').delete().eq('id', id);
+        if (error) alert('Error: ' + error.message);
+        else this.renderTickets();
     }
 
     async loadContactOptions() {
@@ -226,21 +582,31 @@ class CRMApp {
 
     setupTicketEvents() {
         const modal = document.getElementById('ticket-modal');
-        document.getElementById('btn-new-ticket').addEventListener('click', () => modal.style.display = 'flex');
+        document.getElementById('btn-new-ticket').addEventListener('click', () => {
+            document.getElementById('ticket-modal-title').textContent = 'Nuevo Ticket';
+            document.getElementById('ticket-form').reset();
+            document.getElementById('ticket-id').value = '';
+            modal.style.display = 'flex';
+        });
         document.getElementById('btn-cancel').addEventListener('click', () => modal.style.display = 'none');
 
         document.getElementById('ticket-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const { error } = await supabase.from('tickets').insert([{
+            const id = document.getElementById('ticket-id').value;
+            const ticketData = {
                 contact_id: document.getElementById('ticket-contact').value,
                 subject: document.getElementById('ticket-subject').value,
                 description: document.getElementById('ticket-description').value,
                 priority: document.getElementById('ticket-priority').value,
                 status: 'open'
-            }]);
-            if (error) {
-                alert('❌ Error al crear: ' + error.message);
-            } else {
+            };
+
+            const { error } = id
+                ? await supabase.from('tickets').update(ticketData).eq('id', id)
+                : await supabase.from('tickets').insert([ticketData]);
+
+            if (error) alert('❌ Error: ' + error.message);
+            else {
                 modal.style.display = 'none';
                 e.target.reset();
                 this.renderTickets();
@@ -248,224 +614,6 @@ class CRMApp {
         });
     }
 
-    // ================= CONTACTOS =================
-    async loadContacts() {
-        const content = document.querySelector('.content');
-        content.innerHTML = `
-            <div class="card">
-                <div class="card-header">
-                    <h3><i class="fas fa-address-book"></i> Gestión de Contactos</h3>
-                    <button class="btn btn-primary" id="btn-new-contact"><i class="fas fa-plus"></i> Nuevo Cliente</button>
-                </div>
-                <div class="card-body">
-                    <div id="contacts-container"><p>Cargando contactos...</p></div>
-                </div>
-            </div>
-
-            <div class="modal-overlay" id="contact-modal">
-                <div class="modal">
-                    <h3>Nuevo Cliente</h3>
-                    <form id="contact-form">
-                        <label>Nombre completo</label>
-                        <input type="text" id="contact-name" required placeholder="Ej: Ana García">
-                        <label>Email</label>
-                        <input type="email" id="contact-email" required placeholder="ana@empresa.com">
-                        <label>Teléfono</label>
-                        <input type="text" id="contact-phone" placeholder="+34 600 000 000">
-                        <label>Empresa</label>
-                        <input type="text" id="contact-company" placeholder="Nombre de la empresa">
-                        <label>Ciudad</label>
-                        <input type="text" id="contact-city" placeholder="Madrid">
-                        <div class="modal-actions">
-                            <button type="button" class="btn btn-secondary" id="btn-cancel-contact">Cancelar</button>
-                            <button type="submit" class="btn btn-primary">Guardar Cliente</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        `;
-        this.renderContacts();
-        this.setupContactEvents();
-    }
-
-    async renderContacts() {
-        const container = document.getElementById('contacts-container');
-        const { data, error } = await supabase
-            .from('contacts')
-            .select('*')
-            .order('name');
-
-        if (error) {
-            container.innerHTML = '<p class="error">❌ Error: ' + error.message + '</p>';
-            return;
-        }
-
-        if (!data || data.length === 0) {
-            container.innerHTML = '<p>No hay contactos. Crea el primero con "Nuevo Cliente".</p>';
-            return;
-        }
-
-        const statusLabels = { active: 'Activo', lead: 'Lead', inactive: 'Inactivo' };
-
-        container.innerHTML = `
-            <table class="data-table">
-                <thead>
-                    <tr><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Empresa</th><th>Ciudad</th><th>Estado</th></tr>
-                </thead>
-                <tbody>
-                    ${data.map(c => `
-                        <tr>
-                            <td><strong>${c.name}</strong></td>
-                            <td>${c.email}</td>
-                            <td>${c.phone || '—'}</td>
-                            <td>${c.company || '—'}</td>
-                            <td>${c.city || '—'}</td>
-                            <td><span class="badge contact-${c.status}">${statusLabels[c.status] || c.status}</span></td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-        `;
-    }
-
-    setupContactEvents() {
-        const modal = document.getElementById('contact-modal');
-        document.getElementById('btn-new-contact').addEventListener('click', () => modal.style.display = 'flex');
-        document.getElementById('btn-cancel-contact').addEventListener('click', () => modal.style.display = 'none');
-
-        document.getElementById('contact-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const { error } = await supabase.from('contacts').insert([{
-                name: document.getElementById('contact-name').value,
-                email: document.getElementById('contact-email').value,
-                phone: document.getElementById('contact-phone').value,
-                company: document.getElementById('contact-company').value,
-                city: document.getElementById('contact-city').value,
-                status: 'active'
-            }]);
-            if (error) {
-                alert('❌ Error al crear: ' + error.message);
-            } else {
-                modal.style.display = 'none';
-                e.target.reset();
-                this.renderContacts();
-            }
-        });
-    }
-
-    // ================= PRODUCTOS =================
-    async loadProducts() {
-        const content = document.querySelector('.content');
-        content.innerHTML = `
-            <div class="card">
-                <div class="card-header">
-                    <h3><i class="fas fa-box"></i> Catálogo de Productos</h3>
-                    <button class="btn btn-primary" id="btn-new-product"><i class="fas fa-plus"></i> Nuevo Producto</button>
-                </div>
-                <div class="card-body">
-                    <div id="products-container"><p>Cargando productos...</p></div>
-                </div>
-            </div>
-
-            <div class="modal-overlay" id="product-modal">
-                <div class="modal">
-                    <h3>Nuevo Producto</h3>
-                    <form id="product-form">
-                        <label>Nombre del producto</label>
-                        <input type="text" id="product-name" required placeholder="Ej: Teclado inalámbrico">
-                        <label>Descripción</label>
-                        <textarea id="product-description" rows="2" placeholder="Descripción corta"></textarea>
-                        <label>Precio (€)</label>
-                        <input type="number" id="product-price" step="0.01" min="0" required placeholder="49.99">
-                        <label>Stock</label>
-                        <input type="number" id="product-stock" min="0" required placeholder="20">
-                        <label>Categoría</label>
-                        <input type="text" id="product-category" placeholder="Electrónica">
-                        <div class="modal-actions">
-                            <button type="button" class="btn btn-secondary" id="btn-cancel-product">Cancelar</button>
-                            <button type="submit" class="btn btn-primary">Guardar Producto</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        `;
-        this.renderProducts();
-        this.setupProductEvents();
-    }
-
-    async renderProducts() {
-        const container = document.getElementById('products-container');
-        const { data, error } = await supabase
-            .from('products')
-            .select('*')
-            .order('name');
-
-        if (error) {
-            container.innerHTML = '<p class="error">❌ Error: ' + error.message + '</p>';
-            return;
-        }
-
-        if (!data || data.length === 0) {
-            container.innerHTML = '<p>No hay productos. Crea el primero con "Nuevo Producto".</p>';
-            return;
-        }
-
-        container.innerHTML = `
-            <table class="data-table">
-                <thead>
-                    <tr><th>Producto</th><th>Categoría</th><th>Precio</th><th>Stock</th><th>Estado</th></tr>
-                </thead>
-                <tbody>
-                    ${data.map(p => `
-                        <tr>
-                            <td><strong>${p.name}</strong></td>
-                            <td>${p.category || '—'}</td>
-                            <td><strong>${this.formatCurrency(parseFloat(p.price))}</strong></td>
-                            <td>${p.stock}</td>
-                            <td><span class="badge ${this.stockBadge(p.stock)}">${this.stockLabel(p.stock)}</span></td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-        `;
-    }
-
-    stockBadge(stock) {
-        if (stock <= 0) return 'stock-out';
-        if (stock <= 10) return 'stock-low';
-        return 'stock-ok';
-    }
-
-    stockLabel(stock) {
-        if (stock <= 0) return 'Agotado';
-        if (stock <= 10) return 'Stock bajo';
-        return 'En stock';
-    }
-
-    setupProductEvents() {
-        const modal = document.getElementById('product-modal');
-        document.getElementById('btn-new-product').addEventListener('click', () => modal.style.display = 'flex');
-        document.getElementById('btn-cancel-product').addEventListener('click', () => modal.style.display = 'none');
-
-        document.getElementById('product-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const { error } = await supabase.from('products').insert([{
-                name: document.getElementById('product-name').value,
-                description: document.getElementById('product-description').value,
-                price: parseFloat(document.getElementById('product-price').value),
-                stock: parseInt(document.getElementById('product-stock').value),
-                category: document.getElementById('product-category').value,
-                active: true
-            }]);
-            if (error) {
-                alert('❌ Error al crear: ' + error.message);
-            } else {
-                modal.style.display = 'none';
-                e.target.reset();
-                this.renderProducts();
-            }
-        });
-    }
     // ================= PEDIDOS =================
     async loadOrders() {
         const content = document.querySelector('.content');
@@ -506,10 +654,7 @@ class CRMApp {
 
     async renderOrders() {
         const container = document.getElementById('orders-container');
-        const { data, error } = await supabase
-            .from('orders')
-            .select('*, contacts(name)')
-            .order('created_at', { ascending: false });
+        const { data, error } = await supabase.from('orders').select('*, contacts(name)').order('created_at', { ascending: false });
 
         if (error) {
             container.innerHTML = '<p class="error">❌ Error: ' + error.message + '</p>';
@@ -550,10 +695,7 @@ class CRMApp {
 
         container.querySelectorAll('.status-select').forEach(select => {
             select.addEventListener('change', async (e) => {
-                const { error } = await supabase
-                    .from('orders')
-                    .update({ status: e.target.value })
-                    .eq('id', e.target.dataset.id);
+                const { error } = await supabase.from('orders').update({ status: e.target.value }).eq('id', e.target.dataset.id);
                 if (error) alert('Error al actualizar: ' + error.message);
             });
         });
@@ -581,7 +723,6 @@ class CRMApp {
         document.getElementById('btn-new-order').addEventListener('click', () => modal.style.display = 'flex');
         document.getElementById('btn-cancel-order').addEventListener('click', () => modal.style.display = 'none');
 
-        // Calcular total automáticamente
         const updateTotal = () => {
             const productId = document.getElementById('order-product').value;
             const qty = parseInt(document.getElementById('order-quantity').value) || 0;
@@ -592,7 +733,6 @@ class CRMApp {
         document.getElementById('order-product').addEventListener('change', updateTotal);
         document.getElementById('order-quantity').addEventListener('input', updateTotal);
 
-        // Guardar pedido
         document.getElementById('order-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const productId = document.getElementById('order-product').value;
@@ -619,16 +759,14 @@ class CRMApp {
                 unit_price: parseFloat(product.price)
             }]);
 
-            // Descontar stock automáticamente
-            await supabase.from('products')
-                .update({ stock: Math.max(0, product.stock - qty) })
-                .eq('id', productId);
+            await supabase.from('products').update({ stock: Math.max(0, product.stock - qty) }).eq('id', productId);
 
             modal.style.display = 'none';
             e.target.reset();
             this.renderOrders();
         });
     }
+
     // ================= REPORTES =================
     async loadReports() {
         const content = document.querySelector('.content');
@@ -709,6 +847,7 @@ class CRMApp {
             </div>
         `;
     }
+
     // ================= CONFIGURACIÓN =================
     async loadSettings() {
         const content = document.querySelector('.content');
@@ -752,14 +891,13 @@ class CRMApp {
                         <div class="card-header"><h3><i class="fas fa-database"></i> Copias de Seguridad</h3></div>
                         <div class="card-body">
                             <button class="btn btn-primary" id="btn-export"><i class="fas fa-download"></i> Exportar Backup (JSON)</button>
-                            <p style="margin-top:10px; font-size:13px; color:var(--gray-500)">Descarga todos tus datos (clientes, tickets, productos y pedidos) en un archivo JSON.</p>
+                            <p style="margin-top:10px; font-size:13px; color:var(--gray-500)">Descarga todos tus datos en un archivo JSON.</p>
                         </div>
                     </div>
                 </div>
             </div>
         `;
 
-        // Cargar datos actuales
         const { data } = await supabase.from('settings').select('*').eq('id', 1).single();
         if (data) {
             document.getElementById('set-company').value = data.company_name || '';
@@ -767,9 +905,8 @@ class CRMApp {
             document.getElementById('set-phone').value = data.phone || '';
             document.getElementById('set-currency').value = data.currency || 'EUR';
         }
-        document.getElementById('set-url').textContent = '🔗 ' + supabase.supabaseUrl;
+        document.getElementById('set-url').textContent = ' ' + supabase.supabaseUrl;
 
-        // Guardar cambios
         document.getElementById('settings-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const { error } = await supabase.from('settings').update({
@@ -784,7 +921,6 @@ class CRMApp {
             setTimeout(() => msg.textContent = '', 2500);
         });
 
-        // Probar conexión
         document.getElementById('btn-test-connection').addEventListener('click', async () => {
             const result = document.getElementById('connection-result');
             result.textContent = '⏳ Probando...';
@@ -796,7 +932,6 @@ class CRMApp {
                 : '<span class="saved-msg">✅ Conexión correcta (' + ms + ' ms)</span>';
         });
 
-        // Exportar backup
         document.getElementById('btn-export').addEventListener('click', async () => {
             const [c, t, p, o] = await Promise.all([
                 supabase.from('contacts').select('*'),
