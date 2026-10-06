@@ -263,6 +263,9 @@ class CRMApp {
                     <h3 id="product-modal-title">Nuevo Producto</h3>
                     <form id="product-form">
                         <input type="hidden" id="product-id">
+                        <label>Imagen del producto</label>
+                        <input type="file" id="product-image" accept="image/*">
+                        <img id="product-image-preview" style="max-width:150px;margin-top:10px;display:none;border-radius:8px;">
                         <label>Nombre del producto</label>
                         <input type="text" id="product-name" required placeholder="Ej: Teclado inalámbrico">
                         <label>Descripción</label>
