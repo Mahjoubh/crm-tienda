@@ -409,14 +409,22 @@ class CRMApp {
         });
     }
 
-     async loadWhatsApp() {
+    async loadWhatsApp() {
         const content = document.querySelector('.content');
-        const fieldStyle = 'width:100%;padding:9px 10px;border:1px solid #d1d5db;border-radius:8px;margin-bottom:12px;display:block;font-size:14px;background:#fff;';
-        const labelStyle = 'display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:5px;';
+        const fieldStyle = 'width:100%;padding:9px 10px;border:1px solid #bbe5d0;border-radius:8px;margin-bottom:12px;display:block;font-size:14px;background:#f6fdf9;';
+        const labelStyle = 'display:block;font-size:13px;font-weight:600;color:#075E54;margin-bottom:5px;';
+        const headerStyle = 'background:linear-gradient(135deg,#075E54,#128C7E);color:#fff;';
         content.innerHTML = `
+            <div style="background:linear-gradient(135deg,#075E54,#25D366);color:#fff;border-radius:12px;padding:18px 20px;margin-bottom:18px;display:flex;align-items:center;gap:12px;">
+                <i class="fab fa-whatsapp" style="font-size:34px;"></i>
+                <div>
+                    <h2 style="margin:0;color:#fff;font-size:20px;">WhatsApp</h2>
+                    <p style="margin:2px 0 0;color:#e7f8ef;font-size:13px;">Envía mensajes a tus clientes y consulta el historial</p>
+                </div>
+            </div>
             <div class="grid-2col">
-                <div class="card">
-                    <div class="card-header"><h3><i class="fab fa-whatsapp"></i> Nuevo mensaje</h3></div>
+                <div class="card" style="border:1px solid #bbe5d0;">
+                    <div class="card-header" style="${headerStyle}"><h3 style="color:#fff;margin:0;"><i class="fab fa-whatsapp"></i> Nuevo mensaje</h3></div>
                     <div class="card-body">
                         <form class="settings-form" id="wa-page-form">
                             <label style="${labelStyle}">Cliente</label>
@@ -425,12 +433,12 @@ class CRMApp {
                             <select id="wa-tpl" style="${fieldStyle}"><option value="">-- Mensaje libre --</option></select>
                             <label style="${labelStyle}">Mensaje</label>
                             <textarea id="wa-msg" rows="4" style="${fieldStyle}" placeholder="Escribe o elige plantilla..."></textarea>
-                            <button type="button" class="btn btn-primary" id="wa-send-page">📨 Abrir WhatsApp y registrar</button>
+                            <button type="button" id="wa-send-page" style="background:#25D366;color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer;">📨 Abrir WhatsApp y registrar</button>
                         </form>
                     </div>
                 </div>
-                <div class="card">
-                    <div class="card-header"><h3>📜 Historial de envíos</h3></div>
+                <div class="card" style="border:1px solid #bbe5d0;">
+                    <div class="card-header" style="${headerStyle}"><h3 style="color:#fff;margin:0;">📜 Historial de envíos</h3></div>
                     <div class="card-body"><div id="wa-history"><p>Cargando...</p></div></div>
                 </div>
             </div>
