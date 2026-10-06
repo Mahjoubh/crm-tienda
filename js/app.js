@@ -9,11 +9,32 @@ class CRMApp {
     }
 
     async init() {
+        this.injectWhatsAppLink();
         this.setupNavigation();
         this.setupMenuToggle();
         this.setupGlobalSearch();
         await this.checkAuth();
         console.log('CRM + Tienda Online iniciado');
+    }
+
+    // Añade el item "WhatsApp" al sidebar sin tocar index.html
+    injectWhatsAppLink() {
+        if (document.querySelector('a[href="#whatsapp"]')) return;
+        const settingsLink = document.querySelector('a[href="#settings"]');
+        if (!settingsLink) return;
+        const inner = '<i class="fab fa-whatsapp"></i> WhatsApp';
+        const settingsLi = settingsLink.closest('li');
+        if (settingsLi) {
+            const li = document.createElement('li');
+            li.innerHTML = '<a href="#whatsapp" class="nav-link">' + inner + '</a>';
+            settingsLi.parentElement.insertBefore(li, settingsLi);
+        } else {
+            const a = document.createElement('a');
+            a.href = '#whatsapp';
+            a.className = 'nav-link';
+            a.innerHTML = inner;
+            settingsLink.parentNode.insertBefore(a, settingsLink);
+        }
     }
 
     setupNavigation() {
@@ -71,6 +92,9 @@ class CRMApp {
             case 'reports':
                 await this.loadReports();
                 break;
+            case 'whatsapp':
+                await this.loadWhatsApp();
+                break;
             case 'settings':
                 await this.loadSettings();
                 break;
@@ -109,6 +133,160 @@ class CRMApp {
             if (error) errorEl.textContent = '❌ Email o contraseña incorrectos';
             else { errorEl.textContent = ''; this.checkAuth(); }
         });
+    }
+
+    // ================= WHATSAPP =================
+    whatsappTemplates() {
+        return [
+            { id: 'bienvenida', label: '👋 Bienvenida', text: 'Hola {nombre}! Gracias por confiar en {empresa}. ¿En qué podemos ayudarte?' },
+            { id: 'confirmacion', label: '✅ Pedido confirmado', text: 'Hola {nombre}, hemos recibido tu pedido {pedido} por {total}. Te avisaremos cuando lo enviemos. ¡Gracias!' },
+            { id: 'enviado', label: '🚚 Pedido enviado', text: 'Hola {nombre}, tu pedido {pedido} por {total} ya está en camino. Entrega estimada: {fecha}.' },
+            { id: 'pago', label: '💳 Recordatorio de pago', text: 'Hola {nombre}, te recordamos que el pedido {pedido} por {total} está pendiente de pago. ¿Te enviamos el enlace?' },
+            { id: 'lead', label: '🎯 Seguimiento de lead', text: 'Hola {nombre}, ¿sigues interesado? Tenemos novedades que pueden interesarte.' },
+            { id: 'ticket', label: '🎫 Consulta actualizada', text: 'Hola {nombre}, tu consulta "{asunto}" ha sido actualizada. Seguimos trabajando en ella.' }
+        ];
+    }
+
+    fillWhatsAppTemplate(text, vars) {
+        return text.replace(/\{(\w+)\}/g, (m, k) => (vars[k] != null && vars[k] !== '') ? vars[k] : '');
+    }
+
+    cleanPhone(p) { return (p || '').replace(/\D/g, ''); }
+
+    async openWhatsAppModal(opts) {
+        const { data: settings } = await supabase.from('settings').select('company_name').eq('id', 1).single();
+        const vars = {
+            nombre: opts.name || '',
+            empresa: (settings && settings.company_name) || 'Mi Empresa',
+            pedido: opts.order || '',
+            total: opts.total ? this.formatCurrency(parseFloat(opts.total)) : '',
+            fecha: opts.date || '',
+            asunto: opts.subject || ''
+        };
+        const templates = this.whatsappTemplates();
+        const modalHTML = `
+            <div class="modal-overlay" id="wa-modal" style="display:flex;">
+                <div class="modal">
+                    <h3>💬 Enviar WhatsApp</h3>
+                    <label>Cliente</label>
+                    <input type="text" value="${(opts.name || '').replace(/"/g, '&quot;')}" disabled>
+                    <label>Teléfono (con prefijo, ej: 34600000000)</label>
+                    <input type="text" id="wa-phone" value="${opts.phone || ''}">
+                    <label>Plantilla</label>
+                    <select id="wa-template">
+                        <option value="">-- Mensaje libre --</option>
+                        ${templates.map(t => `<option value="${t.id}">${t.label}</option>`).join('')}
+                    </select>
+                    <label>Mensaje</label>
+                    <textarea id="wa-message" rows="4" placeholder="Escribe o elige una plantilla..."></textarea>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" id="wa-cancel">Cancelar</button>
+                        <button type="button" class="btn btn-primary" id="wa-send">📨 Abrir WhatsApp y registrar</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        const modal = document.getElementById('wa-modal');
+        const tplSelect = document.getElementById('wa-template');
+        const msgBox = document.getElementById('wa-message');
+        tplSelect.addEventListener('change', () => {
+            const t = templates.find(x => x.id === tplSelect.value);
+            msgBox.value = t ? this.fillWhatsAppTemplate(t.text, vars) : '';
+        });
+        document.getElementById('wa-cancel').addEventListener('click', () => modal.remove());
+        document.getElementById('wa-send').addEventListener('click', async () => {
+            const phone = this.cleanPhone(document.getElementById('wa-phone').value);
+            const message = msgBox.value.trim();
+            if (!phone) { alert('Pon un teléfono con prefijo (ej: 34600000000)'); return; }
+            if (!message) { alert('Escribe un mensaje o elige una plantilla'); return; }
+            window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(message), '_blank');
+            await supabase.from('whatsapp_logs').insert([{
+                contact_id: opts.contactId || null,
+                phone: phone,
+                template: tplSelect.value || 'libre',
+                message: message,
+                source: opts.source || 'manual'
+            }]);
+            modal.remove();
+        });
+    }
+
+    async loadWhatsApp() {
+        const content = document.querySelector('.content');
+        content.innerHTML = `
+            <div class="grid-2col">
+                <div class="card">
+                    <div class="card-header"><h3><i class="fab fa-whatsapp"></i> Nuevo mensaje</h3></div>
+                    <div class="card-body">
+                        <label>Cliente</label>
+                        <select id="wa-contact"><option value="">-- Selecciona cliente --</option></select>
+                        <label>Plantilla</label>
+                        <select id="wa-tpl"><option value="">-- Mensaje libre --</option></select>
+                        <label>Mensaje</label>
+                        <textarea id="wa-msg" rows="4" placeholder="Escribe o elige plantilla..."></textarea>
+                        <div class="modal-actions"><button class="btn btn-primary" id="wa-send-page">📨 Abrir WhatsApp y registrar</button></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h3>📜 Historial de envíos</h3></div>
+                    <div class="card-body"><div id="wa-history"><p>Cargando...</p></div></div>
+                </div>
+            </div>
+        `;
+        const { data: contacts } = await supabase.from('contacts').select('id, name, phone').order('name');
+        const sel = document.getElementById('wa-contact');
+        if (contacts) sel.innerHTML = '<option value="">-- Selecciona cliente --</option>' + contacts.map(c => `<option value="${c.id}" data-phone="${c.phone || ''}" data-name="${(c.name || '').replace(/"/g, '&quot;')}">${c.name}</option>`).join('');
+        const templates = this.whatsappTemplates();
+        document.getElementById('wa-tpl').innerHTML = '<option value="">-- Mensaje libre --</option>' + templates.map(t => `<option value="${t.id}">${t.label}</option>`).join('');
+
+        document.getElementById('wa-tpl').addEventListener('change', async () => {
+            const t = templates.find(x => x.id === document.getElementById('wa-tpl').value);
+            const msgBox = document.getElementById('wa-msg');
+            if (!t) { msgBox.value = ''; return; }
+            const { data: settings } = await supabase.from('settings').select('company_name').eq('id', 1).single();
+            const opt = sel.selectedOptions[0];
+            const v = { nombre: (opt && opt.dataset.name) || '', empresa: (settings && settings.company_name) || 'Mi Empresa', pedido: '', total: '', fecha: '', asunto: '' };
+            msgBox.value = this.fillWhatsAppTemplate(t.text, v);
+        });
+
+        document.getElementById('wa-send-page').addEventListener('click', async () => {
+            const opt = sel.selectedOptions[0];
+            if (!opt || !opt.value) { alert('Selecciona un cliente'); return; }
+            const phone = this.cleanPhone(opt.dataset.phone);
+            const message = document.getElementById('wa-msg').value.trim();
+            if (!phone) { alert('El cliente no tiene teléfono o falta el prefijo'); return; }
+            if (!message) { alert('Escribe un mensaje o elige plantilla'); return; }
+            window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(message), '_blank');
+            await supabase.from('whatsapp_logs').insert([{ contact_id: opt.value, phone: phone, template: document.getElementById('wa-tpl').value || 'libre', message: message, source: 'compositor' }]);
+            this.renderWhatsAppLogs();
+        });
+
+        this.renderWhatsAppLogs();
+    }
+
+    async renderWhatsAppLogs() {
+        const box = document.getElementById('wa-history');
+        if (!box) return;
+        const { data, error } = await supabase.from('whatsapp_logs').select('*, contacts(name)').order('created_at', { ascending: false }).limit(50);
+        if (error) { box.innerHTML = '<p class="error">❌ ' + error.message + '</p>'; return; }
+        if (!data || data.length === 0) { box.innerHTML = '<p>Aún no hay envíos.</p>'; return; }
+        box.innerHTML = `
+            <table class="data-table">
+                <thead><tr><th>Fecha</th><th>Cliente</th><th>Teléfono</th><th>Plantilla</th><th>Mensaje</th></tr></thead>
+                <tbody>
+                    ${data.map(l => `
+                        <tr>
+                            <td>${this.formatDate(l.created_at)}</td>
+                            <td>${l.contacts ? l.contacts.name : '—'}</td>
+                            <td>${l.phone}</td>
+                            <td>${l.template}</td>
+                            <td>${(l.message || '').substring(0, 60)}${(l.message || '').length > 60 ? '…' : ''}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
     }
 
     // ================= CONTACTOS =================
@@ -185,6 +363,7 @@ class CRMApp {
                             <td>${c.city || '—'}</td>
                             <td><span class="badge contact-${c.status}">${statusLabels[c.status] || c.status}</span></td>
                             <td>
+                                <button class="btn-whatsapp" style="background:#25D366;color:#fff;border:none;border-radius:6px;padding:6px 9px;cursor:pointer;margin-right:4px;" data-id="${c.id}" data-phone="${c.phone || ''}" data-name="${(c.name || '').replace(/"/g, '&quot;')}" title="WhatsApp">💬</button>
                                 <button class="btn-edit" data-id="${c.id}"><i class="fas fa-edit"></i></button>
                                 <button class="btn-delete" data-id="${c.id}"><i class="fas fa-trash"></i></button>
                             </td>
@@ -193,6 +372,7 @@ class CRMApp {
                 </tbody>
             </table>
         `;
+        container.querySelectorAll('.btn-whatsapp').forEach(btn => btn.addEventListener('click', () => this.openWhatsAppModal({ contactId: btn.dataset.id, name: btn.dataset.name, phone: btn.dataset.phone, source: 'contacto' })));
         container.querySelectorAll('.btn-edit').forEach(btn => btn.addEventListener('click', () => this.editContact(btn.dataset.id)));
         container.querySelectorAll('.btn-delete').forEach(btn => btn.addEventListener('click', () => this.deleteContact(btn.dataset.id)));
     }
@@ -493,7 +673,7 @@ class CRMApp {
 
     async renderTickets(tickets = null) {
         const container = document.getElementById('tickets-container');
-        const { data, error } = tickets ? { data: tickets, error: null } : await supabase.from('tickets').select('*, contacts(name, email)').order('created_at', { ascending: false });
+        const { data, error } = tickets ? { data: tickets, error: null } : await supabase.from('tickets').select('*, contacts(name, email, phone)').order('created_at', { ascending: false });
         if (error) { container.innerHTML = '<p class="error">❌ Error: ' + error.message + '</p>'; return; }
         if (!data || data.length === 0) { container.innerHTML = '<p>No hay tickets.</p>'; return; }
 
@@ -517,6 +697,7 @@ class CRMApp {
                             </td>
                             <td>${this.formatDate(t.created_at)}${t.due_date ? `<br><small style="color:#ef4444;">Vence: ${t.due_date}</small>` : ''}</td>
                             <td>
+                                <button class="btn-whatsapp" style="background:#25D366;color:#fff;border:none;border-radius:6px;padding:6px 9px;cursor:pointer;margin-right:4px;" data-id="${t.contact_id || ''}" data-phone="${(t.contacts && t.contacts.phone) || ''}" data-name="${(t.contacts && t.contacts.name) || ''}" data-subject="${(t.subject || '').replace(/"/g, '&quot;')}" title="WhatsApp">💬</button>
                                 <button class="btn-chat" data-id="${t.id}"><i class="fas fa-comments"></i></button>
                                 <button class="btn-edit" data-id="${t.id}"><i class="fas fa-edit"></i></button>
                                 <button class="btn-delete" data-id="${t.id}"><i class="fas fa-trash"></i></button>
@@ -533,6 +714,7 @@ class CRMApp {
                 if (error) alert('Error: ' + error.message);
             });
         });
+        container.querySelectorAll('.btn-whatsapp').forEach(btn => btn.addEventListener('click', () => this.openWhatsAppModal({ contactId: btn.dataset.id || null, name: btn.dataset.name, phone: btn.dataset.phone, subject: btn.dataset.subject, source: 'ticket' })));
         container.querySelectorAll('.btn-chat').forEach(btn => btn.addEventListener('click', () => this.openTicketChat(btn.dataset.id)));
         container.querySelectorAll('.btn-edit').forEach(btn => btn.addEventListener('click', () => this.editTicket(btn.dataset.id)));
         container.querySelectorAll('.btn-delete').forEach(btn => btn.addEventListener('click', () => this.deleteTicket(btn.dataset.id)));
@@ -736,7 +918,7 @@ class CRMApp {
 
     async renderOrders() {
         const container = document.getElementById('orders-container');
-        const { data, error } = await supabase.from('orders').select('*, contacts(name)').order('created_at', { ascending: false });
+        const { data, error } = await supabase.from('orders').select('*, contacts(name, phone)').order('created_at', { ascending: false });
         if (error) { container.innerHTML = '<p class="error">❌ Error: ' + error.message + '</p>'; return; }
         if (!data || data.length === 0) { container.innerHTML = '<p>No hay pedidos.</p>'; return; }
 
@@ -760,6 +942,7 @@ class CRMApp {
                             </td>
                             <td>${this.formatDate(o.created_at)}</td>
                             <td>
+                                <button class="btn-whatsapp" style="background:#25D366;color:#fff;border:none;border-radius:6px;padding:6px 9px;cursor:pointer;margin-right:4px;" data-id="${o.contact_id || ''}" data-phone="${(o.contacts && o.contacts.phone) || ''}" data-name="${(o.contacts && o.contacts.name) || ''}" data-order="${o.order_number}" data-total="${o.total}" data-date="${o.delivery_date || ''}" title="WhatsApp">💬</button>
                                 <button class="btn-edit" data-id="${o.id}" title="Editar pedido"><i class="fas fa-edit"></i></button>
                                 <button class="btn-edit btn-invoice" data-id="${o.id}" title="Descargar factura en PDF">📄</button>
                             </td>
@@ -774,6 +957,7 @@ class CRMApp {
                 if (error) alert('Error: ' + error.message);
             });
         });
+        container.querySelectorAll('.btn-whatsapp').forEach(btn => btn.addEventListener('click', () => this.openWhatsAppModal({ contactId: btn.dataset.id || null, name: btn.dataset.name, phone: btn.dataset.phone, order: btn.dataset.order, total: btn.dataset.total, date: btn.dataset.date, source: 'pedido' })));
         container.querySelectorAll('.btn-invoice').forEach(btn => btn.addEventListener('click', () => this.generateInvoicePDF(btn.dataset.id)));
         container.querySelectorAll('.btn-edit:not(.btn-invoice)').forEach(btn => btn.addEventListener('click', () => this.editOrder(btn.dataset.id)));
     }
@@ -864,7 +1048,7 @@ class CRMApp {
         });
     }
 
-    // ================= FACTURA PDF (COMPLETA) =================
+    // ================= FACTURA PDF =================
     async loadImageDataUrl(url) {
         try {
             const res = await fetch(url);
@@ -903,7 +1087,6 @@ class CRMApp {
         const company = (settings && settings.company_name) ? settings.company_name : 'Mi Empresa';
         const defaultRate = parseFloat((settings && settings.iva_rate) || 21);
 
-        // --- Logo ---
         let cx = 15, cy0 = 20;
         if (settings && settings.logo_url) {
             const dataUrl = await this.loadImageDataUrl(settings.logo_url);
@@ -918,7 +1101,6 @@ class CRMApp {
             }
         }
 
-        // --- Cabecera empresa ---
         doc.setFontSize(18); doc.setTextColor(37, 99, 235);
         doc.text(company, cx, cy0);
         doc.setFontSize(9); doc.setTextColor(90);
@@ -928,7 +1110,6 @@ class CRMApp {
         const contactLine = [settings && settings.email, settings && settings.phone].filter(Boolean).join('  |  ');
         if (contactLine) doc.text(contactLine, cx, hy);
 
-        // --- Bloque factura ---
         doc.setFontSize(16); doc.setTextColor(0);
         doc.text('FACTURA', 195, 20, { align: 'right' });
         doc.setFontSize(10);
@@ -938,7 +1119,6 @@ class CRMApp {
 
         doc.setDrawColor(200); doc.line(15, 44, 195, 44);
 
-        // --- Facturar a / Enviar a ---
         doc.setFontSize(11); doc.setTextColor(0);
         doc.text('Facturar a:', 15, 52);
         doc.setFontSize(10); doc.setTextColor(60);
@@ -957,7 +1137,6 @@ class CRMApp {
             doc.text(order.shipping_address, 110, 58, { maxWidth: 80 });
         }
 
-        // --- Tabla de líneas ---
         let y = Math.max(cy + 6, 78);
         doc.setFillColor(37, 99, 235); doc.rect(15, y - 6, 180, 8, 'F');
         doc.setTextColor(255); doc.setFontSize(10);
@@ -985,7 +1164,6 @@ class CRMApp {
             y += 8;
         });
 
-        // --- Descuento ---
         const discountPct = parseFloat(order.discount || 0);
         if (discountPct > 0) {
             doc.setTextColor(220, 38, 38);
@@ -995,7 +1173,6 @@ class CRMApp {
             y += 7;
         }
 
-        // --- Desglose IVA por tipo ---
         const groups = {};
         lines.forEach((it) => {
             const rate = parseFloat((it.products && it.products.iva_rate) || defaultRate);
@@ -1015,7 +1192,6 @@ class CRMApp {
         doc.setFontSize(13); doc.setTextColor(0);
         doc.text('TOTAL:', 120, y); doc.text(money(order.total), 193, y, { align: 'right' });
 
-        // --- Pago, entrega, notas ---
         y += 12;
         doc.setFontSize(9); doc.setTextColor(60);
         const payLabels = { transferencia: 'Transferencia bancaria', tarjeta: 'Tarjeta', efectivo: 'Efectivo', paypal: 'PayPal' };
@@ -1024,7 +1200,6 @@ class CRMApp {
         if (order.delivery_date) doc.text('Entrega estimada: ' + order.delivery_date, 15, y + 10);
         if (order.notes) { doc.text('Observaciones: ' + order.notes, 15, y + 15, { maxWidth: 120 }); }
 
-        // --- Pie ---
         doc.setFontSize(8); doc.setTextColor(140);
         const footer = (settings && settings.invoice_footer) ? settings.invoice_footer : 'Gracias por su compra. Documento generado automáticamente por MiCRM.';
         doc.text(footer, 15, 285, { maxWidth: 180 });
