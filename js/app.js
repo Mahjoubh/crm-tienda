@@ -339,7 +339,15 @@ class CRMApp {
         a.click();
         a.remove();
     }
-  
+      openLink(url) {
+        const a = document.createElement('a');
+        a.href = url;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+    }
     cleanPhone(p) { return (p || '').replace(/\D/g, ''); }
 
      async openWhatsAppModal(opts) {
