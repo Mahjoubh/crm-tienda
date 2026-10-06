@@ -10,6 +10,7 @@ class CRMApp {
 
     async init() {
         this.injectWhatsAppLink();
+        this.injectSocialLink();
         this.setupNavigation();
         this.setupMenuToggle();
         this.setupGlobalSearch();
