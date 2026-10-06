@@ -1698,7 +1698,21 @@ class CRMApp {
             a.click();
         });
     }
-
+    fixStoreButton() {
+        const candidates = document.querySelectorAll('.sidebar a, .sidebar button, .sidebar .btn');
+        candidates.forEach(el => {
+            if ((el.textContent || '').trim().includes('Ver Tienda Pública')) {
+                el.style.display = 'block';
+                el.style.width = 'auto';
+                el.style.margin = '10px 14px';
+                el.style.padding = '10px 12px';
+                el.style.borderRadius = '8px';
+                el.style.textAlign = 'center';
+                el.style.boxSizing = 'border-box';
+            }
+        });
+    }
+    
     formatDate(date) { return new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(date)); }
     formatCurrency(amount) { return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(amount); }
 }
