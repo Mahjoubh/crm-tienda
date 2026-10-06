@@ -18,7 +18,6 @@ class CRMApp {
         console.log('CRM + Tienda Online iniciado');
     }
 
-    // Añade el item "WhatsApp" al sidebar sin tocar index.html
     injectWhatsAppLink() {
         if (document.querySelector('a[href="#whatsapp"]')) return;
         const settingsLink = document.querySelector('a[href="#settings"]');
@@ -108,7 +107,7 @@ class CRMApp {
         }
     }
 
-        // 🔓 LOGIN DESACTIVADO TEMPORALMENTE
+    // 🔓 LOGIN DESACTIVADO TEMPORALMENTE + avatar + notificaciones
     async checkAuth() {
         const loginOverlay = document.getElementById('login-overlay');
         const mainContent = document.querySelector('.main-content');
@@ -121,7 +120,6 @@ class CRMApp {
         const userMenu = document.querySelector('.user-menu span');
         if (userMenu) userMenu.textContent = userName;
 
-        // Avatar con iniciales (sustituye la imagen rota)
         const userMenuBox = document.querySelector('.user-menu');
         if (userMenuBox) {
             const badImg = userMenuBox.querySelector('img');
@@ -140,7 +138,6 @@ class CRMApp {
         this.setupLogin();
     }
 
-    // 🔔 Notificaciones reales en la campana
     async setupNotifications() {
         const icon = document.querySelector('.user-menu i.fa-bell') || document.querySelector('i.fa-bell');
         if (!icon) return;
@@ -203,6 +200,119 @@ class CRMApp {
             if (error) errorEl.textContent = '❌ Email o contraseña incorrectos';
             else { errorEl.textContent = ''; this.checkAuth(); }
         });
+    }
+
+    // ================= SONIDOS + TIEMPO REAL =================
+    setupSoundAndRealtime() {
+        this.soundEnabled = localStorage.getItem('crm_sound') !== 'off';
+        this.injectSoundToggle();
+        const unlock = () => { this.ensureAudio(); };
+        document.addEventListener('click', unlock, { once: true });
+        document.addEventListener('keydown', unlock, { once: true });
+        this.setupRealtime();
+    }
+
+    injectSoundToggle() {
+        const userMenu = document.querySelector('.user-menu');
+        if (!userMenu || document.getElementById('sound-toggle')) return;
+        const btn = document.createElement('button');
+        btn.id = 'sound-toggle';
+        btn.style.cssText = 'background:none;border:none;font-size:18px;cursor:pointer;margin-right:8px;';
+        btn.textContent = this.soundEnabled ? '🔊' : '🔇';
+        btn.title = 'Activar / silenciar sonidos';
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            this.soundEnabled = !this.soundEnabled;
+            localStorage.setItem('crm_sound', this.soundEnabled ? 'on' : 'off');
+            btn.textContent = this.soundEnabled ? '🔊' : '🔇';
+            if (this.soundEnabled) this.playMessageSound();
+        };
+        userMenu.insertBefore(btn, userMenu.firstChild);
+    }
+
+    ensureAudio() {
+        if (!this.audioCtx) {
+            const AC = window.AudioContext || window.webkitAudioContext;
+            if (!AC) return null;
+            this.audioCtx = new AC();
+        }
+        if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
+        return this.audioCtx;
+    }
+
+    beep(freq, start, dur, type, gain) {
+        const ctx = this.ensureAudio();
+        if (!ctx) return;
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = type || 'sine';
+        o.frequency.value = freq;
+        const t = ctx.currentTime + start;
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(gain || 0.2, t + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.connect(g); g.connect(ctx.destination);
+        o.start(t); o.stop(t + dur + 0.02);
+    }
+
+    playMessageSound() {
+        if (!this.soundEnabled) return;
+        this.beep(880, 0, 0.15, 'sine', 0.25);
+        this.beep(1320, 0.12, 0.18, 'sine', 0.22);
+    }
+
+    playNotifSound() {
+        if (!this.soundEnabled) return;
+        this.beep(520, 0, 0.18, 'triangle', 0.25);
+        this.beep(392, 0.16, 0.22, 'triangle', 0.25);
+    }
+
+    showToast(text) {
+        let wrap = document.getElementById('toast-wrap');
+        if (!wrap) {
+            wrap = document.createElement('div');
+            wrap.id = 'toast-wrap';
+            wrap.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:1000;display:flex;flex-direction:column;gap:8px;';
+            document.body.appendChild(wrap);
+        }
+        const t = document.createElement('div');
+        t.style.cssText = 'background:#111827;color:#fff;padding:10px 14px;border-radius:10px;font-size:13px;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:280px;';
+        t.textContent = text;
+        wrap.appendChild(t);
+        setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .4s'; setTimeout(() => t.remove(), 400); }, 4000);
+    }
+
+    setupRealtime() {
+        if (this.rtChannel) return;
+        this.rtChannel = supabase.channel('crm-realtime')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ticket_messages' }, () => {
+                this.playMessageSound();
+                this.showToast('💬 Nuevo mensaje recibido');
+            })
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, () => {
+                this.playNotifSound();
+                this.showToast('🛒 Nuevo pedido entrante');
+            })
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tickets' }, () => {
+                this.playNotifSound();
+                this.showToast('🎫 Nuevo ticket creado');
+            })
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, (payload) => {
+                const o = payload.old, n = payload.new;
+                if (o && n && o.status !== n.status) { this.playNotifSound(); this.showToast('🔔 Pedido cambiado a: ' + n.status); }
+            })
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'tickets' }, (payload) => {
+                const o = payload.old, n = payload.new;
+                if (o && n && o.status !== n.status) { this.playNotifSound(); this.showToast('🔔 Ticket cambiado a: ' + n.status); }
+            })
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'products' }, (payload) => {
+                const o = payload.old, n = payload.new;
+                if (o && n) {
+                    const min = n.min_stock != null ? n.min_stock : 5;
+                    if (n.stock <= min && o.stock > min) { this.playNotifSound(); this.showToast('📦 Stock bajo: ' + n.name); }
+                }
+            })
+            .subscribe();
     }
 
     // ================= WHATSAPP =================
@@ -1559,119 +1669,7 @@ class CRMApp {
         });
     }
 
-        // ================= SONIDOS + TIEMPO REAL =================
-    setupSoundAndRealtime() {
-        this.soundEnabled = localStorage.getItem('crm_sound') !== 'off';
-        this.injectSoundToggle();
-        const unlock = () => { this.ensureAudio(); };
-        document.addEventListener('click', unlock, { once: true });
-        document.addEventListener('keydown', unlock, { once: true });
-        this.setupRealtime();
-    }
-
-    injectSoundToggle() {
-        const userMenu = document.querySelector('.user-menu');
-        if (!userMenu || document.getElementById('sound-toggle')) return;
-        const btn = document.createElement('button');
-        btn.id = 'sound-toggle';
-        btn.style.cssText = 'background:none;border:none;font-size:18px;cursor:pointer;margin-right:8px;';
-        btn.textContent = this.soundEnabled ? '🔊' : '🔇';
-        btn.title = 'Activar / silenciar sonidos';
-        btn.onclick = (e) => {
-            e.stopPropagation();
-            this.soundEnabled = !this.soundEnabled;
-            localStorage.setItem('crm_sound', this.soundEnabled ? 'on' : 'off');
-            btn.textContent = this.soundEnabled ? '🔊' : '🔇';
-            if (this.soundEnabled) this.playMessageSound();
-        };
-        userMenu.insertBefore(btn, userMenu.firstChild);
-    }
-
-    ensureAudio() {
-        if (!this.audioCtx) {
-            const AC = window.AudioContext || window.webkitAudioContext;
-            if (!AC) return null;
-            this.audioCtx = new AC();
-        }
-        if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
-        return this.audioCtx;
-    }
-
-    beep(freq, start, dur, type, gain) {
-        const ctx = this.ensureAudio();
-        if (!ctx) return;
-        const o = ctx.createOscillator();
-        const g = ctx.createGain();
-        o.type = type || 'sine';
-        o.frequency.value = freq;
-        const t = ctx.currentTime + start;
-        g.gain.setValueAtTime(0, t);
-        g.gain.linearRampToValueAtTime(gain || 0.2, t + 0.01);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-        o.connect(g); g.connect(ctx.destination);
-        o.start(t); o.stop(t + dur + 0.02);
-    }
-
-    playMessageSound() {
-        if (!this.soundEnabled) return;
-        this.beep(880, 0, 0.15, 'sine', 0.25);
-        this.beep(1320, 0.12, 0.18, 'sine', 0.22);
-    }
-
-    playNotifSound() {
-        if (!this.soundEnabled) return;
-        this.beep(520, 0, 0.18, 'triangle', 0.25);
-        this.beep(392, 0.16, 0.22, 'triangle', 0.25);
-    }
-
-    showToast(text) {
-        let wrap = document.getElementById('toast-wrap');
-        if (!wrap) {
-            wrap = document.createElement('div');
-            wrap.id = 'toast-wrap';
-            wrap.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:1000;display:flex;flex-direction:column;gap:8px;';
-            document.body.appendChild(wrap);
-        }
-        const t = document.createElement('div');
-        t.style.cssText = 'background:#111827;color:#fff;padding:10px 14px;border-radius:10px;font-size:13px;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:280px;';
-        t.textContent = text;
-        wrap.appendChild(t);
-        setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .4s'; setTimeout(() => t.remove(), 400); }, 4000);
-    }
-
-    setupRealtime() {
-        if (this.rtChannel) return;
-        this.rtChannel = supabase.channel('crm-realtime')
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ticket_messages' }, () => {
-                this.playMessageSound();
-                this.showToast('💬 Nuevo mensaje recibido');
-            })
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, () => {
-                this.playNotifSound();
-                this.showToast('🛒 Nuevo pedido entrante');
-            })
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tickets' }, () => {
-                this.playNotifSound();
-                this.showToast('🎫 Nuevo ticket creado');
-            })
-            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, (payload) => {
-                const o = payload.old, n = payload.new;
-                if (o && n && o.status !== n.status) { this.playNotifSound(); this.showToast('🔔 Pedido cambiado a: ' + n.status); }
-            })
-            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'tickets' }, (payload) => {
-                const o = payload.old, n = payload.new;
-                if (o && n && o.status !== n.status) { this.playNotifSound(); this.showToast('🔔 Ticket cambiado a: ' + n.status); }
-            })
-            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'products' }, (payload) => {
-                const o = payload.old, n = payload.new;
-                if (o && n) {
-                    const min = n.min_stock != null ? n.min_stock : 5;
-                    if (n.stock <= min && o.stock > min) { this.playNotifSound(); this.showToast('📦 Stock bajo: ' + n.name); }
-                }
-            })
-            .subscribe();
-    }
- return new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(date)); }
+    formatDate(date) { return new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(date)); }
     formatCurrency(amount) { return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(amount); }
 }
 
