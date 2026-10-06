@@ -1789,6 +1789,167 @@ class CRMApp {
         });
         this._i18nObserver.observe(document.body, { subtree: true, childList: true, characterData: true });
     }
+    // ================= REDES SOCIALES =================
+    injectSocialLink() {
+        if (document.querySelector('a[href="#social"]')) return;
+        const waLink = document.querySelector('a[href="#whatsapp"]');
+        if (!waLink) return;
+        const inner = '<i class="fas fa-share-alt"></i> Redes Sociales';
+        const waLi = waLink.closest('li');
+        if (waLi) {
+            const li = document.createElement('li');
+            li.innerHTML = '<a href="#social" class="nav-link">' + inner + '</a>';
+            waLi.parentElement.insertBefore(li, waLi.nextSibling);
+        } else {
+            const a = document.createElement('a');
+            a.href = '#social'; a.className = 'nav-link'; a.innerHTML = inner;
+            waLink.parentNode.insertBefore(a, waLink.nextSibling);
+        }
+    }
+
+    socialDict() {
+        return {
+            es: { title:'Redes Sociales', add:'Añadir red', open:'Abrir', edit:'Editar', del:'Eliminar', network:'Red', username:'Usuario / @', url:'URL del perfil', notes:'Notas', empty:'Aún no has añadido redes.', cancel:'Cancelar', save:'Guardar' },
+            fr: { title:'Réseaux sociaux', add:'Ajouter un réseau', open:'Ouvrir', edit:'Modifier', del:'Supprimer', network:'Réseau', username:'Utilisateur / @', url:'URL du profil', notes:'Notes', empty:'Aucun réseau ajouté.', cancel:'Annuler', save:'Enregistrer' },
+            ar: { title:'وسائل التواصل', add:'إضافة شبكة', open:'فتح', edit:'تعديل', del:'حذف', network:'الشبكة', username:'المستخدم / @', url:'رابط الملف', notes:'ملاحظات', empty:'لم تضف شبكات بعد.', cancel:'إلغاء', save:'حفظ' }
+        };
+    }
+
+    stxt(k) {
+        const d = this.socialDict();
+        const L = this.lang || 'es';
+        return (d[L] && d[L][k]) || d.es[k] || k;
+    }
+
+    socialMeta() {
+        return {
+            instagram: { icon:'fa-instagram', color:'#E1306C', label:'Instagram' },
+            facebook: { icon:'fa-facebook-f', color:'#1877F2', label:'Facebook' },
+            tiktok: { icon:'fa-tiktok', color:'#010101', label:'TikTok' },
+            linkedin: { icon:'fa-linkedin-in', color:'#0A66C2', label:'LinkedIn' },
+            x: { icon:'fa-twitter', color:'#111111', label:'X (Twitter)' },
+            youtube: { icon:'fa-youtube', color:'#FF0000', label:'YouTube' },
+            threads: { icon:'fa-threads', color:'#000000', label:'Threads' },
+            pinterest: { icon:'fa-pinterest-p', color:'#E60023', label:'Pinterest' }
+        };
+    }
+
+    async loadSocial() {
+        const content = document.querySelector('.content');
+        const t = (k) => this.stxt(k);
+        content.innerHTML = `
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-share-alt"></i> ${t('title')}</h3>
+                    <button class="btn btn-primary" id="btn-new-social"><i class="fas fa-plus"></i> ${t('add')}</button>
+                </div>
+                <div class="card-body"><div id="social-container"><p>Cargando...</p></div></div>
+            </div>
+            <div class="modal-overlay" id="social-modal">
+                <div class="modal">
+                    <h3 id="social-modal-title">${t('add')}</h3>
+                    <form id="social-form">
+                        <input type="hidden" id="social-id">
+                        <label>${t('network')}</label>
+                        <select id="social-network">
+                            <option value="instagram">Instagram</option>
+                            <option value="facebook">Facebook</option>
+                            <option value="tiktok">TikTok</option>
+                            <option value="linkedin">LinkedIn</option>
+                            <option value="x">X (Twitter)</option>
+                            <option value="youtube">YouTube</option>
+                            <option value="threads">Threads</option>
+                            <option value="pinterest">Pinterest</option>
+                        </select>
+                        <label>${t('username')}</label>
+                        <input type="text" id="social-username" placeholder="@miempresa">
+                        <label>${t('url')}</label>
+                        <input type="url" id="social-url" placeholder="https://instagram.com/miempresa">
+                        <label>${t('notes')}</label>
+                        <textarea id="social-notes" rows="2"></textarea>
+                        <div class="modal-actions">
+                            <button type="button" class="btn btn-secondary" id="btn-cancel-social">${t('cancel')}</button>
+                            <button type="submit" class="btn btn-primary">${t('save')}</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+        this.renderSocial();
+        this.setupSocialEvents();
+    }
+
+    async renderSocial() {
+        const container = document.getElementById('social-container');
+        if (!container) return;
+        const { data, error } = await supabase.from('social_profiles').select('*').order('created_at', { ascending: false });
+        if (error) { container.innerHTML = '<p class="error">❌ ' + error.message + '</p>'; return; }
+        if (!data || data.length === 0) { container.innerHTML = '<p>' + this.stxt('empty') + '</p>'; return; }
+        const meta = this.socialMeta();
+        container.innerHTML = '<div class="stats-grid">' + data.map(s => {
+            const m = meta[s.network] || { icon:'fa-globe', color:'#6b7280', label:s.network };
+            return `
+            <div class="stat-card" style="border-top:4px solid ${m.color};">
+                <div class="stat-icon" style="background:${m.color};"><i class="fab ${m.icon}"></i></div>
+                <div class="stat-info">
+                    <h3>${m.label}</h3>
+                    <p style="margin:2px 0;color:#6b7280;font-size:13px;">${s.username || '—'}</p>
+                    <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
+                        ${s.url ? `<button class="btn btn-primary btn-social-open" data-url="${s.url}" style="padding:4px 10px;font-size:12px;">🔗 ${this.stxt('open')}</button>` : ''}
+                        <button class="btn-edit btn-social-edit" data-id="${s.id}"><i class="fas fa-edit"></i></button>
+                        <button class="btn-delete btn-social-del" data-id="${s.id}"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+            </div>`;
+        }).join('') + '</div>';
+        container.querySelectorAll('.btn-social-open').forEach(b => b.addEventListener('click', () => this.openLink(b.dataset.url)));
+        container.querySelectorAll('.btn-social-edit').forEach(b => b.addEventListener('click', () => this.editSocial(b.dataset.id)));
+        container.querySelectorAll('.btn-social-del').forEach(b => b.addEventListener('click', () => this.deleteSocial(b.dataset.id)));
+    }
+
+    setupSocialEvents() {
+        const modal = document.getElementById('social-modal');
+        document.getElementById('btn-new-social').addEventListener('click', () => {
+            document.getElementById('social-modal-title').textContent = this.stxt('add');
+            document.getElementById('social-form').reset();
+            document.getElementById('social-id').value = '';
+            modal.style.display = 'flex';
+        });
+        document.getElementById('btn-cancel-social').addEventListener('click', () => modal.style.display = 'none');
+        document.getElementById('social-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('social-id').value;
+            const rowData = {
+                network: document.getElementById('social-network').value,
+                username: document.getElementById('social-username').value,
+                url: document.getElementById('social-url').value,
+                notes: document.getElementById('social-notes').value,
+                active: true
+            };
+            const { error } = id ? await supabase.from('social_profiles').update(rowData).eq('id', id) : await supabase.from('social_profiles').insert([rowData]);
+            if (error) alert('❌ ' + error.message);
+            else { modal.style.display = 'none'; e.target.reset(); this.renderSocial(); }
+        });
+    }
+
+    async editSocial(id) {
+        const { data } = await supabase.from('social_profiles').select('*').eq('id', id).single();
+        if (!data) return;
+        document.getElementById('social-modal-title').textContent = this.stxt('edit');
+        document.getElementById('social-id').value = data.id;
+        document.getElementById('social-network').value = data.network;
+        document.getElementById('social-username').value = data.username || '';
+        document.getElementById('social-url').value = data.url || '';
+        document.getElementById('social-notes').value = data.notes || '';
+        document.getElementById('social-modal').style.display = 'flex';
+    }
+
+    async deleteSocial(id) {
+        if (!confirm('¿Eliminar esta red?')) return;
+        const { error } = await supabase.from('social_profiles').delete().eq('id', id);
+        if (error) alert('❌ ' + error.message);
+        else this.renderSocial();
+    }
 
     formatDate(date) { return new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(date)); }
     formatCurrency(amount) { return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(amount); }
