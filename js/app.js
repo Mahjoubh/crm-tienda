@@ -2070,7 +2070,13 @@ class CRMApp {
                             <td>${o.post_date || '—'}${o.post_time ? ' ' + o.post_time : ''}</td>
                             <td>${(o.content || '').substring(0, 60)}${(o.content || '').length > 60 ? '…' : ''}</td>
                             <td>${o.image_url ? `<img src="${o.image_url}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;">` : '—'}</td>
-                            <td><span class="badge ${s.cls}">${s.label}</span></td>
+                                                        <td>
+                                <select class="status-select" data-id="${o.id}" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;background:#fff;cursor:pointer;">
+                                    <option value="idea" ${o.status === 'idea' ? 'selected' : ''}>💡 ${this.ptxt('idea')}</option>
+                                    <option value="scheduled" ${o.status === 'scheduled' ? 'selected' : ''}>🕒 ${this.ptxt('scheduled')}</option>
+                                    <option value="published" ${o.status === 'published' ? 'selected' : ''}>✅ ${this.ptxt('published')}</option>
+                                </select>
+                            </td>
                             <td>
                                 <button class="btn-edit btn-post-edit" data-id="${o.id}"><i class="fas fa-edit"></i></button>
                                 <button class="btn-delete btn-post-del" data-id="${o.id}"><i class="fas fa-trash"></i></button>
