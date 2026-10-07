@@ -2154,6 +2154,21 @@ class CRMApp {
             else { modal.style.display = 'none'; e.target.reset(); this.renderPosts(); }
         });
     }
+    async duplicatePost(id) {
+        const { data } = await supabase.from('social_posts').select('*').eq('id', id).single();
+        if (!data) return;
+        document.getElementById('post-modal-title').textContent = 'Duplicar publicación';
+        document.getElementById('post-id').value = ''; // Importante: vacío para que cree una nueva
+        document.getElementById('post-network').value = data.network;
+        document.getElementById('post-date').value = data.post_date || '';
+        document.getElementById('post-time').value = data.post_time || '';
+        document.getElementById('post-content').value = (data.content || '') + ' (copia)';
+        document.getElementById('post-image-url').value = data.image_url || '';
+        const pv = document.getElementById('post-image-preview');
+        if (data.image_url) { pv.src = data.image_url; pv.style.display = 'block'; } else { pv.src = ''; pv.style.display = 'none'; }
+        document.getElementById('post-status').value = 'idea'; // Se resetea a Idea por defecto
+        document.getElementById('post-modal').style.display = 'flex';
+    }
 
     async editPost(id) {
         const { data } = await supabase.from('social_posts').select('*').eq('id', id).single();
