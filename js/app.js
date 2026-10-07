@@ -2598,7 +2598,7 @@ class CRMApp {
             </tbody>
         </table>
         `;
-        container.querySelectorAll('.btn-page-edit').forEach(btn => btn.addEventListener('click', () => this.editPage(btn.dataset.id)));
+        container.querySelectorAll('.btn-page-edit').forEach(btn => btn.addEventListener('click', () => this.loadPageEditorById(btn.dataset.id)));
         container.querySelectorAll('.btn-page-del').forEach(btn => btn.addEventListener('click', () => this.deletePage(btn.dataset.id)));
     }
 
