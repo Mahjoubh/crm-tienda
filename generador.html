@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generador de Páginas — MiCRM</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; padding: 20px; }
+.container { max-width: 1200px; margin: 0 auto; }
+.header { background: linear-gradient(135deg, #3b82f6, #8b5cf6); border-radius: 14px; padding: 20px 24px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+.header h1 { font-size: 22px; color: #fff; }
+.header a { color: #fff; text-decoration: none; font-size: 14px; background: rgba(255,255,255,.15); padding: 8px 14px; border-radius: 8px; }
+.header a:hover { background: rgba(255,255,255,.25); }
+.card { background: #1e293b; border: 1px solid #334155; border-radius: 14px; padding: 20px; margin-bottom: 20px; }
+.card h2 { font-size: 16px; color: #93c5fd; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.card h2::before { content: ''; width: 4px; height: 20px; background: #3b82f6; border-radius: 2px; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 800px) { .row { grid-template-columns: 1fr; } }
+label { display: block; font-size: 13px; font-weight: 600; color: #cbd5e1; margin-bottom: 6px; }
+input[type="text"], textarea, select {
+  width: 100%; padding: 10px 12px; background: #0f172a; color: #e2e8f0;
+  border: 1.5px solid #334155; border-radius: 8px; font-family: inherit; font-size: 14px; margin-bottom: 10px;
+}
+textarea { min-height: 90px; resize: vertical; }
+input:focus, textarea:focus, select:focus { outline: none; border-color: #3b82f6; }
+.btn { background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: #fff; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; }
+.btn:hover { opacity: .9; }
+.btn-alt { background: #334155; }
+.btn-ai { background: linear-gradient(135deg, #8b5cf6, #ec4899); }
+.badge { display: inline-block; padding: 3px 10px; background: #1e3a8a; color: #93c5fd; border-radius: 50px; font-size: 12px; font-weight: 600; margin-right: 6px; }
+.vars { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.vars span { background: #0f172a; border: 1px solid #334155; padding: 4px 10px; border-radius: 50px; font-size: 12px; color: #93c5fd; cursor: pointer; font-family: monospace; }
+.vars span:hover { background: #1e3a8a; }
+.product-list { max-height: 400px; overflow-y: auto; border: 1px solid #334155; border-radius: 10px; padding: 8px; }
+.product-item { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 6px; background: #0f172a; margin-bottom: 6px; font-size: 14px; }
+.product-item input { width: auto; margin: 0; }
+.product-item img { width: 40px; height: 40px; object-fit: cover; border-radius: 6px; background: #334155; }
+.product-item .name { flex: 1; font-weight: 600; }
+.product-item .meta { font-size: 12px; color: #94a3b8; }
+#status { margin-top: 10px; font-size: 13px; color: #94a3b8; padding: 10px; background: #0f172a; border-radius: 8px; min-height: 40px; white-space: pre-wrap; font-family: monospace; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>🚀 Generador Masivo de Páginas</h1>
+    <a href="index.html">← Volver al CRM</a>
+  </div>
+
+  <div class="row">
+
+    <div class="card">
+      <h2>📦 Productos disponibles</h2>
+      <p style="font-size:13px;color:#94a3b8;margin-bottom:10px;">Selecciona los productos que quieres convertir en páginas.</p>
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <button class="btn btn-alt" onclick="markAll(true)">Seleccionar todos</button>
+        <button class="btn btn-alt" onclick="markAll(false)">Quitar todos</button>
+        <span id="selCount" class="badge">0 seleccionados</span>
+      </div>
+      <div class="product-list" id="productList">
+        <p style="text-align:center;color:#64748b;padding:20px;">Cargando productos desde el CRM...</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>✏️ Plantilla por página</h2>
+      <label>Título de la página</label>
+      <input type="text" id="tplTitle" placeholder="{name} — Mi Tienda">
+
+      <label>Slug (URL)</label>
+      <input type="text" id="tplSlug" placeholder="producto-{sku}">
+
+      <label>Bloque Hero — Título</label>
+      <input type="text" id="tplHeroTitle" placeholder="{name}">
+
+      <label>Bloque Hero — Subtítulo</label>
+      <input type="text" id="tplHeroSub" placeholder="{price} € — {category}">
+
+      <label>Bloque Texto — Descripción</label>
+      <textarea id="tplText" placeholder="{description}&#10;&#10;Disponible en nuestra tienda."></textarea>
+
+      <label>Bloque Imagen — URL</label>
+      <input type="text" id="tplImage" placeholder="{image_url}">
+
+      <p style="font-size:12px;color:#94a3b8;margin-top:6px;">💡 Haz clic en una variable para insertarla:</p>
+      <div class="vars" id="varsList"></div>
+    </div>
+
+  </div>
+
+  <div class="card">
+    <h2>⚡ Generar</h2>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn" onclick="generatePages()">🚀 Generar páginas y guardar en el CRM</button>
+      <button class="btn btn-ai" onclick="previewOne()">👁 Vista previa de la primera</button>
+    </div>
+    <div id="status">Esperando acción...</div>
+  </div>
+
+</div>
+
+<script type="module">
+import { supabase } from './js/supabase-config.js';
+
+let PRODUCTS = [];
+let SELECTED = new Set();
+let ACTIVE_INPUT = null;
+
+// Variables disponibles
+const VARS = ['{name}','{sku}','{price}','{cost}','{category}','{description}','{image_url}','{stock}'];
+
+function slugify(s) {
+  return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+}
+
+function fill(tpl, p) {
+  return (tpl || '')
+    .replace(/{name}/g, p.name || '')
+    .replace(/{sku}/g, p.sku || '')
+    .replace(/{price}/g, p.price != null ? String(p.price) : '')
+    .replace(/{cost}/g, p.cost != null ? String(p.cost) : '')
+    .replace(/{category}/g, p.category || '')
+    .replace(/{description}/g, p.description || '')
+    .replace(/{image_url}/g, p.image_url || '')
+    .replace(/{stock}/g, p.stock != null ? String(p.stock) : '');
+}
+
+function renderVars() {
+  const box = document.getElementById('varsList');
+  box.innerHTML = VARS.map(v => `<span onclick="insertVar('${v}')">${v}</span>`).join('');
+}
+
+window.insertVar = function(v) {
+  if (!ACTIVE_INPUT) { alert('Haz clic primero en un campo de texto'); return; }
+  const el = ACTIVE_INPUT;
+  const start = el.selectionStart, end = el.selectionEnd;
+  el.value = el.value.slice(0, start) + v + el.value.slice(end);
+  el.focus();
+  el.selectionStart = el.selectionEnd = start + v.length;
+};
+
+// Registrar input activo
+document.querySelectorAll('input[type="text"], textarea').forEach(el => {
+  el.addEventListener('focus', () => { ACTIVE_INPUT = el; });
+});
+
+function renderProducts() {
+  const list = document.getElementById('productList');
+  if (PRODUCTS.length === 0) {
+    list.innerHTML = '<p style="text-align:center;color:#64748b;padding:20px;">No hay productos en el CRM todavía.</p>';
+    return;
+  }
+  list.innerHTML = PRODUCTS.map(p => `
+    <div class="product-item">
+      <input type="checkbox" ${SELECTED.has(p.id) ? 'checked' : ''} onchange="toggleSel('${p.id}', this.checked)">
+      ${p.image_url ? `<img src="${p.image_url}">` : '<div style="width:40px;height:40px;background:#334155;border-radius:6px;"></div>'}
+      <div class="name">${p.name}</div>
+      <div class="meta">
+        ${p.sku ? `<span class="badge">${p.sku}</span>` : ''}
+        ${p.price ? `<span class="badge">${p.price} €</span>` : ''}
+        ${p.category ? `<span class="badge">${p.category}</span>` : ''}
+      </div>
+    </div>
+  `).join('');
+  updateCount();
+}
+
+window.toggleSel = function(id, on) {
+  if (on) SELECTED.add(id); else SELECTED.delete(id);
+  updateCount();
+};
+
+window.markAll = function(on) {
+  if (on) PRODUCTS.forEach(p => SELECTED.add(p.id));
+  else SELECTED.clear();
+  renderProducts();
+};
+
+function updateCount() {
+  document.getElementById('selCount').textContent = SELECTED.size + ' seleccionados';
+}
+
+function log(msg) {
+  const st = document.getElementById('status');
+  st.textContent += '\n' + msg;
+  st.scrollTop = st.scrollHeight;
+}
+
+window.previewOne = async function() {
+  if (SELECTED.size === 0) { alert('Selecciona al menos un producto.'); return; }
+  const firstId = [...SELECTED][0];
+  const p = PRODUCTS.find(x => x.id === firstId);
+  if (!p) return;
+  const title = fill(document.getElementById('tplTitle').value, p) || p.name;
+  const w = window.open('', '_blank');
+  w.document.write(`
+    <html><head><title>${title}</title>
+    <style>body{font-family:system-ui;max-width:800px;margin:40px auto;padding:20px;color:#111}
+    .hero{background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;padding:60px 20px;border-radius:16px;text-align:center;margin-bottom:30px}
+    .hero h1{font-size:32px;margin-bottom:10px}
+    img{max-width:100%;border-radius:12px;margin:20px 0}
+    </style></head><body>
+    <div class="hero">
+      <h1>${fill(document.getElementById('tplHeroTitle').value, p) || p.name}</h1>
+      <p>${fill(document.getElementById('tplHeroSub').value, p)}</p>
+    </div>
+    ${fill(document.getElementById('tplImage').value, p) ? `<img src="${fill(document.getElementById('tplImage').value, p)}">` : ''}
+    <div>${(fill(document.getElementById('tplText').value, p) || '').replace(/\n/g, '<br>')}</div>
+    </body></html>
+  `);
+  w.document.close();
+};
+
+window.generatePages = async function() {
+  if (SELECTED.size === 0) { alert('Selecciona al menos un producto.'); return; }
+  document.getElementById('status').textContent = '';
+  const toGen = PRODUCTS.filter(p => SELECTED.has(p.id));
+  log(`🚀 Generando ${toGen.length} página(s)...`);
+
+  let ok = 0, ko = 0;
+  for (const p of toGen) {
+    const title = fill(document.getElementById('tplTitle').value, p) || p.name;
+    const slug = slugify(fill(document.getElementById('tplSlug').value, p) || p.name + '-' + (p.sku || p.id.slice(0, 8)));
+    const heroTitle = fill(document.getElementById('tplHeroTitle').value, p) || p.name;
+    const heroSub = fill(document.getElementById('tplHeroSub').value, p);
+    const text = fill(document.getElementById('tplText').value, p) || p.description || '';
+    const imageUrl = fill(document.getElementById('tplImage').value, p) || p.image_url || '';
+
+    const blocks = [];
+    blocks.push({ id: 'blk-hero-' + p.id.slice(0,8), type: 'hero', data: { title: heroTitle, subtitle: heroSub, cta_text: 'Comprar ahora', cta_url: '#producto' } });
+    if (imageUrl) blocks.push({ id: 'blk-img-' + p.id.slice(0,8), type: 'image', data: { url: imageUrl, alt: p.name, caption: '' } });
+    if (text) blocks.push({ id: 'blk-txt-' + p.id.slice(0,8), type: 'text', data: { content: text } });
+
+    const row = {
+      title: title,
+      slug: slug,
+      status: 'draft',
+      content: { blocks: blocks },
+      featured_image: imageUrl || null
+    };
+
+    try {
+      // Upsert: si el slug ya existe, lo actualiza; si no, lo crea
+      const { error } = await supabase.from('pages').upsert([row], { onConflict: 'slug' });
+      if (error) {
+        log(`❌ ${title}: ${error.message}`);
+        ko++;
+      } else {
+        log(`✅ ${title}  →  /${slug}`);
+        ok++;
+      }
+    } catch (e) {
+      log(`❌ ${title}: ${e.message}`);
+      ko++;
+    }
+  }
+  log(`\n🎉 Terminado: ${ok} creadas/actualizadas · ${ko} errores`);
+};
+
+async function loadProducts() {
+  const { data, error } = await supabase.from('products').select('*').eq('active', true).order('name');
+  if (error) {
+    document.getElementById('productList').innerHTML = '<p style="color:#ef4444;padding:20px;">❌ ' + error.message + '</p>';
+    return;
+  }
+  PRODUCTS = data || [];
+  renderProducts();
+}
+
+renderVars();
+loadProducts();
+</script>
+</body>
+</html>
