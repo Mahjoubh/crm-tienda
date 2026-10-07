@@ -273,11 +273,12 @@ window.generatePages = async function() {
 
   let ok = 0, ko = 0;
   for (const p of toGen) {
-    const title = fill(document.getElementById('tplTitle').value, p) || p.name;
+    const ai = AI_RESULTS[p.id] ? AI_RESULTS[p.id].data : null;
+    const title = (ai && ai.title) || fill(document.getElementById('tplTitle').value, p) || p.name;
     const slug = slugify(fill(document.getElementById('tplSlug').value, p) || p.name + '-' + (p.sku || p.id.slice(0, 8)));
-    const heroTitle = fill(document.getElementById('tplHeroTitle').value, p) || p.name;
-    const heroSub = fill(document.getElementById('tplHeroSub').value, p);
-    const text = fill(document.getElementById('tplText').value, p) || p.description || '';
+    const heroTitle = (ai && ai.hero_title) || fill(document.getElementById('tplHeroTitle').value, p) || p.name;
+    const heroSub = (ai && ai.hero_sub) || fill(document.getElementById('tplHeroSub').value, p);
+    const text = (ai && ai.text) || fill(document.getElementById('tplText').value, p) || p.description || '';
     const imageUrl = fill(document.getElementById('tplImage').value, p) || p.image_url || '';
 
     const blocks = [];
