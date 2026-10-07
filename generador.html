@@ -323,6 +323,19 @@ themeBtn.addEventListener('click', () => {
   localStorage.setItem('gen_theme', isLight ? 'light' : 'dark');
 });
 
+// ===== SECCIONES PLEGABLES =====
+document.querySelectorAll('.card > h2').forEach(h => {
+  const card = h.parentElement;
+  const tog = document.createElement('span');
+  tog.className = 'tog';
+  tog.textContent = '▼';
+  h.appendChild(tog);
+  h.addEventListener('click', () => {
+    const collapsed = card.classList.toggle('collapsed');
+    tog.textContent = collapsed ? '▶' : '▼';
+  });
+});
+
 renderVars();
 loadProducts();
 </script>
