@@ -2590,6 +2590,7 @@ class CRMApp {
                 <td><span class="badge ${p.status === 'published' ? 'contact-active' : 'contact-inactive'}">${p.status === 'published' ? '✅ Publicado' : '📝 Borrador'}</span></td>
                 <td>${this.formatDate(p.updated_at)}</td>
                 <td>
+                    <button class="btn-edit btn-page-view" data-slug="${p.slug}" data-status="${p.status}" title="Ver página pública" style="margin-right:4px;">👁</button>
                     <button class="btn-edit btn-page-edit" data-id="${p.id}" title="Editar"><i class="fas fa-edit"></i></button>
                     <button class="btn-delete btn-page-del" data-id="${p.id}" title="Eliminar"><i class="fas fa-trash"></i></button>
                 </td>
