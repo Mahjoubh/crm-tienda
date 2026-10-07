@@ -1889,6 +1889,61 @@ class CRMApp {
                         </select>
                     </div>
                     <div id="posts-container"><p>Cargando...</p></div>
+            </div>
+            <div class="card" style="margin-top:18px;">
+                <div class="card-header">
+                    <h3><i class="fas fa-chart-line"></i> ${this.mtxt('title')}</h3>
+                    <button class="btn btn-primary" id="btn-new-metric"><i class="fas fa-plus"></i> ${this.mtxt('add')}</button>
+                </div>
+                <div class="card-body">
+                    <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+                        <select id="metric-filter-network" style="padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;">
+                            <option value="">${this.mtxt('allNetworks')}</option>
+                            <option value="instagram">Instagram</option>
+                            <option value="facebook">Facebook</option>
+                            <option value="tiktok">TikTok</option>
+                            <option value="linkedin">LinkedIn</option>
+                            <option value="x">X</option>
+                            <option value="youtube">YouTube</option>
+                            <option value="threads">Threads</option>
+                            <option value="pinterest">Pinterest</option>
+                        </select>
+                    </div>
+                    <div style="position:relative;height:280px;margin-bottom:18px;"><canvas id="chart-metrics"></canvas></div>
+                    <div id="metrics-container"><p>Cargando...</p></div>
+                </div>
+            </div>
+            <div class="modal-overlay" id="metric-modal">
+                <div class="modal">
+                    <h3 id="metric-modal-title">${this.mtxt('add')}</h3>
+                    <form id="metric-form">
+                        <input type="hidden" id="metric-id">
+                        <label>${this.mtxt('network')}</label>
+                        <select id="metric-network">
+                            <option value="instagram">Instagram</option>
+                            <option value="facebook">Facebook</option>
+                            <option value="tiktok">TikTok</option>
+                            <option value="linkedin">LinkedIn</option>
+                            <option value="x">X</option>
+                            <option value="youtube">YouTube</option>
+                            <option value="threads">Threads</option>
+                            <option value="pinterest">Pinterest</option>
+                        </select>
+                        <label>${this.mtxt('date')}</label>
+                        <input type="date" id="metric-date">
+                        <label>${this.mtxt('followers')}</label>
+                        <input type="number" id="metric-followers" min="0" value="0">
+                        <label>${this.mtxt('reach')}</label>
+                        <input type="number" id="metric-reach" min="0" value="0">
+                        <label>${this.mtxt('likes')}</label>
+                        <input type="number" id="metric-likes" min="0" value="0">
+                        <div class="modal-actions">
+                            <button type="button" class="btn btn-secondary" id="btn-cancel-metric">${this.mtxt('cancel')}</button>
+                            <button type="submit" class="btn btn-primary">${this.mtxt('save')}</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
                 </div>
             </div>
             <div class="modal-overlay" id="social-modal">
