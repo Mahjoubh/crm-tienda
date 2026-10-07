@@ -2405,6 +2405,126 @@ class CRMApp {
             });
         }
     }
+    // ================= MÉTRICAS =================
+    async renderMetrics() {
+        const container = document.getElementById('metrics-container');
+        if (!container) return;
+        const fn = document.getElementById('metric-filter-network');
+        let q = supabase.from('social_metrics').select('*').order('metric_date', { ascending: false });
+        if (fn && fn.value) q = q.eq('network', fn.value);
+        const { data, error } = await q;
+        if (error) { container.innerHTML = '<p class="error">❌ ' + error.message + '</p>'; return; }
+        if (!data || data.length === 0) { container.innerHTML = '<p>' + this.mtxt('empty') + '</p>'; }
+        else {
+            const meta = this.socialMeta();
+            container.innerHTML = `
+                <table class="data-table">
+                    <thead><tr><th>${this.mtxt('date')}</th><th>${this.mtxt('network')}</th><th>${this.mtxt('followers')}</th><th>${this.mtxt('reach')}</th><th>${this.mtxt('likes')}</th><th>${this.mtxt('actions')}</th></tr></thead>
+                    <tbody>
+                        ${data.map(m => {
+                            const net = meta[m.network] || { icon:'fa-globe', color:'#6b7280', label:m.network };
+                            return `
+                            <tr>
+                                <td>${m.metric_date || '—'}</td>
+                                <td><i class="fab ${net.icon}" style="color:${net.color};margin-right:6px;"></i>${net.label}</td>
+                                <td>${m.followers || 0}</td>
+                                <td>${m.reach || 0}</td>
+                                <td>${m.likes || 0}</td>
+                                <td>
+                                    <button class="btn-edit btn-metric-edit" data-id="${m.id}"><i class="fas fa-edit"></i></button>
+                                    <button class="btn-delete btn-metric-del" data-id="${m.id}"><i class="fas fa-trash"></i></button>
+                                </td>
+                            </tr>`;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+            container.querySelectorAll('.btn-metric-edit').forEach(b => b.addEventListener('click', () => this.editMetric(b.dataset.id)));
+            container.querySelectorAll('.btn-metric-del').forEach(b => b.addEventListener('click', () => this.deleteMetric(b.dataset.id)));
+        }
+        this.loadMetricsChart();
+    }
+
+    async loadMetricsChart() {
+        const canvas = document.getElementById('chart-metrics');
+        if (!canvas) return;
+        if (typeof Chart === 'undefined') { canvas.parentElement.innerHTML = '<p>❌ Falta Chart.js</p>'; return; }
+        if (this.chartMetrics) { try { this.chartMetrics.destroy(); } catch(e){} }
+        const { data } = await supabase.from('social_metrics').select('*').order('metric_date');
+        if (!data || data.length === 0) return;
+        const networks = [...new Set(data.map(m => m.network))];
+        const meta = this.socialMeta();
+        const datasets = networks.map(net => {
+            const items = data.filter(m => m.network === net).sort((a,b) => (a.metric_date || '').localeCompare(b.metric_date || ''));
+            return {
+                label: (meta[net] || {}).label || net,
+                data: items.map(m => m.followers || 0),
+                borderColor: (meta[net] || {}).color || '#6b7280',
+                backgroundColor: ((meta[net] || {}).color || '#6b7280') + '20',
+                fill: true,
+                tension: 0.3,
+                pointRadius: 4
+            };
+        });
+        const labels = [...new Set(data.map(m => m.metric_date))].sort();
+        this.chartMetrics = new Chart(canvas, {
+            type: 'line',
+            data: { labels, datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' }, title: { display: true, text: this.mtxt('followersChart') } },
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+    }
+
+    setupMetricsEvents() {
+        const modal = document.getElementById('metric-modal');
+        document.getElementById('btn-new-metric').addEventListener('click', () => {
+            document.getElementById('metric-modal-title').textContent = this.mtxt('add');
+            document.getElementById('metric-form').reset();
+            document.getElementById('metric-id').value = '';
+            document.getElementById('metric-date').value = new Date().toISOString().split('T')[0];
+            modal.style.display = 'flex';
+        });
+        document.getElementById('btn-cancel-metric').addEventListener('click', () => modal.style.display = 'none');
+        document.getElementById('metric-filter-network').addEventListener('change', () => this.renderMetrics());
+        document.getElementById('metric-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('metric-id').value;
+            const row = {
+                network: document.getElementById('metric-network').value,
+                metric_date: document.getElementById('metric-date').value,
+                followers: parseInt(document.getElementById('metric-followers').value) || 0,
+                reach: parseInt(document.getElementById('metric-reach').value) || 0,
+                likes: parseInt(document.getElementById('metric-likes').value) || 0
+            };
+            const { error } = id ? await supabase.from('social_metrics').update(row).eq('id', id) : await supabase.from('social_metrics').insert([row]);
+            if (error) alert('❌ ' + error.message);
+            else { modal.style.display = 'none'; e.target.reset(); this.renderMetrics(); }
+        });
+    }
+
+    async editMetric(id) {
+        const { data } = await supabase.from('social_metrics').select('*').eq('id', id).single();
+        if (!data) return;
+        document.getElementById('metric-modal-title').textContent = this.mtxt('edit');
+        document.getElementById('metric-id').value = data.id;
+        document.getElementById('metric-network').value = data.network;
+        document.getElementById('metric-date').value = data.metric_date || '';
+        document.getElementById('metric-followers').value = data.followers || 0;
+        document.getElementById('metric-reach').value = data.reach || 0;
+        document.getElementById('metric-likes').value = data.likes || 0;
+        document.getElementById('metric-modal').style.display = 'flex';
+    }
+
+    async deleteMetric(id) {
+        if (!confirm(this.mtxt('del') + '?')) return;
+        const { error } = await supabase.from('social_metrics').delete().eq('id', id);
+        if (error) alert('❌ ' + error.message);
+        else this.renderMetrics();
+    }
 
     async deletePost(id) {
         if (!confirm(this.ptxt('del') + '?')) return;
