@@ -2535,7 +2535,131 @@ class CRMApp {
         if (error) alert('❌ ' + error.message);
         else this.renderPosts();
     }
+// ================= PÁGINAS (MINI CMS) =================
+    async loadPages() {
+        const content = document.querySelector('.content');
+        content.innerHTML = `
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-file-alt"></i> Gestor de Páginas</h3>
+                <button class="btn btn-primary" id="btn-new-page"><i class="fas fa-plus"></i> Nueva Página</button>
+            </div>
+            <div class="card-body">
+                <div id="pages-container"><p>Cargando páginas...</p></div>
+            </div>
+        </div>
+        <div class="modal-overlay" id="page-modal">
+            <div class="modal">
+                <h3 id="page-modal-title">Nueva Página</h3>
+                <form id="page-form">
+                    <input type="hidden" id="page-id">
+                    <label>Título</label>
+                    <input type="text" id="page-title-input" required placeholder="Ej: Sobre nosotros">
+                    <label>Slug (URL pública)</label>
+                    <input type="text" id="page-slug" required placeholder="sobre-nosotros">
+                    <label>Estado</label>
+                    <select id="page-status">
+                        <option value="draft"> Borrador</option>
+                        <option value="published">✅ Publicado</option>
+                    </select>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" id="btn-cancel-page">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar Página</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        `;
+        this.renderPages();
+        this.setupPageEvents();
+    }
 
+    async renderPages() {
+        const container = document.getElementById('pages-container');
+        const { data, error } = await supabase.from('pages').select('*').order('updated_at', { ascending: false });
+        if (error) { container.innerHTML = '<p class="error">❌ Error: ' + error.message + '</p>'; return; }
+        if (!data || data.length === 0) { container.innerHTML = '<p>No hay páginas todavía. Pulsa "Nueva Página" para crear la primera.</p>'; return; }
+        container.innerHTML = `
+        <table class="data-table">
+            <thead><tr><th>Título</th><th>Slug</th><th>Estado</th><th>Actualizada</th><th>Acciones</th></tr></thead>
+            <tbody>
+            ${data.map(p => `
+            <tr>
+                <td><strong>${p.title}</strong></td>
+                <td><code style="background:#f3f4f6;padding:2px 6px;border-radius:4px;">/${p.slug}</code></td>
+                <td><span class="badge ${p.status === 'published' ? 'contact-active' : 'contact-inactive'}">${p.status === 'published' ? '✅ Publicado' : '📝 Borrador'}</span></td>
+                <td>${this.formatDate(p.updated_at)}</td>
+                <td>
+                    <button class="btn-edit btn-page-edit" data-id="${p.id}" title="Editar"><i class="fas fa-edit"></i></button>
+                    <button class="btn-delete btn-page-del" data-id="${p.id}" title="Eliminar"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>
+            `).join('')}
+            </tbody>
+        </table>
+        `;
+        container.querySelectorAll('.btn-page-edit').forEach(btn => btn.addEventListener('click', () => this.editPage(btn.dataset.id)));
+        container.querySelectorAll('.btn-page-del').forEach(btn => btn.addEventListener('click', () => this.deletePage(btn.dataset.id)));
+    }
+
+    setupPageEvents() {
+        const modal = document.getElementById('page-modal');
+        const titleInput = document.getElementById('page-title-input');
+        const slugInput = document.getElementById('page-slug');
+        titleInput.addEventListener('input', () => {
+            if (!document.getElementById('page-id').value) slugInput.value = this.slugify(titleInput.value);
+        });
+        document.getElementById('btn-new-page').addEventListener('click', () => {
+            document.getElementById('page-modal-title').textContent = 'Nueva Página';
+            document.getElementById('page-form').reset();
+            document.getElementById('page-id').value = '';
+            modal.style.display = 'flex';
+        });
+        document.getElementById('btn-cancel-page').addEventListener('click', () => modal.style.display = 'none');
+        document.getElementById('page-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('page-id').value;
+            const rowData = {
+                title: titleInput.value.trim(),
+                slug: this.slugify(slugInput.value) || this.slugify(titleInput.value),
+                status: document.getElementById('page-status').value
+            };
+            if (!rowData.title || !rowData.slug) { alert('El título y el slug son obligatorios'); return; }
+            const { error } = id
+                ? await supabase.from('pages').update(rowData).eq('id', id)
+                : await supabase.from('pages').insert([rowData]);
+            if (error) {
+                if (error.code === '23505') alert('❌ Ya existe otra página con ese slug');
+                else alert('❌ Error: ' + error.message);
+                return;
+            }
+            modal.style.display = 'none';
+            this.renderPages();
+        });
+    }
+
+    async editPage(id) {
+        const { data } = await supabase.from('pages').select('*').eq('id', id).single();
+        if (!data) return;
+        document.getElementById('page-modal-title').textContent = 'Editar Página';
+        document.getElementById('page-id').value = data.id;
+        document.getElementById('page-title-input').value = data.title;
+        document.getElementById('page-slug').value = data.slug;
+        document.getElementById('page-status').value = data.status;
+        document.getElementById('page-modal').style.display = 'flex';
+    }
+
+    async deletePage(id) {
+        if (!confirm('¿Eliminar esta página?')) return;
+        const { error } = await supabase.from('pages').delete().eq('id', id);
+        if (error) alert('❌ Error: ' + error.message);
+        else this.renderPages();
+    }
+
+    slugify(text) {
+        return (text || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    }
+    
     formatDate(date) { return new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(date)); }
     formatCurrency(amount) { return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(amount); }
 }
