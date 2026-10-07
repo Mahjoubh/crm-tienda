@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cargando...</title>
+<style>
+:root { --primary:#2563eb; --text:#111827; --muted:#6b7280; }
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; color:var(--text); background:#fff; line-height:1.6; }
+.pp-top { display:flex; justify-content:space-between; align-items:center; max-width:960px; margin:0 auto; padding:14px 20px; }
+.pp-back { color:var(--primary); text-decoration:none; font-size:14px; }
+.pp-brand { font-weight:700; color:var(--muted); font-size:14px; }
+#pp-content { max-width:960px; margin:0 auto; padding:0 20px 60px; }
+.pp-loading,.pp-error { text-align:center; color:var(--muted); padding:60px 0; font-size:16px; }
+.pp-hero { text-align:center; padding:70px 20px; border-radius:16px; background:linear-gradient(135deg,#2563eb,#7c3aed); color:#fff; margin-bottom:36px; }
+.pp-hero h1 { font-size:40px; margin-bottom:12px; }
+.pp-hero p { font-size:18px; opacity:.92; margin-bottom:22px; }
+.pp-cta { display:inline-block; background:#fff; color:var(--primary); padding:12px 26px; border-radius:10px; font-weight:700; text-decoration:none; }
+.pp-block { margin-bottom:34px; }
+.pp-text { font-size:17px; }
+.pp-image img { width:100%; border-radius:14px; display:block; }
+.pp-image figcaption { text-align:center; color:var(--muted); font-size:13px; margin-top:8px; }
+.pp-features h2 { font-size:26px; margin-bottom:16px; text-align:center; }
+.pp-features-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px; }
+.pp-feature { border:1px solid #e5e7eb; border-radius:12px; padding:18px; background:#f9fafb; }
+.pp-feature h3 { font-size:16px; margin-bottom:6px; }
+.pp-feature p { font-size:14px; color:var(--muted); }
+.pp-footer { border-top:1px solid #e5e7eb; padding:20px; text-align:center; color:var(--muted); font-size:13px; }
+</style>
+</head>
+<body>
+<header class="pp-top">
+    <a href="tienda.html" class="pp-back">← Volver a la tienda</a>
+    <span class="pp-brand" id="pp-brand"></span>
+</header>
+<main id="pp-content"><p class="pp-loading">Cargando página...</p></main>
+<footer class="pp-footer"><span id="pp-footer-text"></span></footer>
+
+<script type="module">
+import { supabase } from './js/supabase-config.js';
+
+const esc = (s) => (s == null ? '' : String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+function blockHTML(b) {
+    const d = b.data || {};
+    if (b.type === 'hero') {
+        return `
+        <section class="pp-hero">
+            <h1>${esc(d.title)}</h1>
+            ${d.subtitle ? `<p>${esc(d.subtitle)}</p>` : ''}
+            ${d.cta_text && d.cta_url ? `<a class="pp-cta" href="${esc(d.cta_url)}">${esc(d.cta_text)}</a>` : ''}
+        </section>`;
+    }
+    if (b.type === 'text') {
+        return `<section class="pp-block pp-text">${esc(d.content).replace(/\n/g, '<br>')}</section>`;
+    }
+    if (b.type === 'image') {
+        return `
+        <figure class="pp-block pp-image">
+            <img src="${esc(d.url)}" alt="${esc(d.alt)}" loading="lazy">
+            ${d.caption ? `<figcaption>${esc(d.caption)}</figcaption>` : ''}
+        </figure>`;
+    }
+    if (b.type === 'features') {
+        return `
+        <section class="pp-block pp-features">
+            ${d.title ? `<h2>${esc(d.title)}</h2>` : ''}
+            <div class="pp-features-grid">
+                ${(d.items || []).map(it => `
+                <div class="pp-feature">
+                    <h3>${esc(it.title)}</h3>
+                    <p>${esc(it.description)}</p>
+                </div>`).join('')}
+            </div>
+        </section>`;
+    }
+    return '';
+}
+
+async function loadPage(slug, preview) {
+    const main = document.getElementById('pp-content');
+    let q = supabase.from('pages').select('*').eq('slug', slug);
+    if (!preview) q = q.eq('status', 'published');
+    const { data, error } = await q.single();
+    if (error || !data) {
+        document.title = 'Página no encontrada';
+        main.innerHTML = '<div class="pp-error">😕 Página no encontrada.</div>';
+        return;
+    }
+    document.title = data.seo_title || data.title;
+    if (data.seo_description) {
+        let m = document.querySelector('meta[name="description"]');
+        if (!m) { m = document.createElement('meta'); m.name = 'description'; document.head.appendChild(m); }
+        m.content = data.seo_description;
+    }
+    const blocks = (data.content && data.content.blocks) ? data.content.blocks : [];
+    main.innerHTML = blocks.length ? blocks.map(blockHTML).join('') : '<p class="pp-loading">Esta página aún no tiene contenido.</p>';
+}
+
+// Marca y pie desde Configuración
+supabase.from('settings').select('company_name').eq('id', 1).single().then(({ data }) => {
+    if (data && data.company_name) {
+        document.getElementById('pp-brand').textContent = data.company_name;
+        document.getElementById('pp-footer-text').textContent = '© ' + new Date().getFullYear() + ' ' + data.company_name;
+    }
+});
+
+const params = new URLSearchParams(window.location.search);
+const slug = params.get('slug') || window.location.hash.replace('#', '').replace(/^\/+/, '');
+const preview = params.get('preview') === '1';
+
+if (!slug) {
+    document.getElementById('pp-content').innerHTML = '<p class="pp-error">❌ Falta el slug. Ejemplo: pagina.html?slug=pagina-de-prueba</p>';
+} else {
+    loadPage(slug, preview);
+}
+</script>
+</body>
+</html>
