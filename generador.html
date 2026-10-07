@@ -551,6 +551,69 @@ window.importBackup = function (f) {
   r.readAsText(f);
 };
 
+  // ===== ZIP: PÁGINAS HTML AUTÓNOMAS =====
+function pageHTML(p) {
+  const t = finalTextsFor(p);
+  const esc = (s) => (s == null ? '' : String(s)).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${esc(t.title)}</title>
+<meta name="description" content="${esc((t.text || '').substring(0, 155))}">
+<meta property="og:title" content="${esc(t.title)}">
+<meta property="og:description" content="${esc(t.heroSub)}">
+${t.image ? `<meta property="og:image" content="${esc(t.image)}">` : ''}
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#111827;line-height:1.6;background:#fff}
+.hero{background:linear-gradient(135deg,#2563eb,#7c3aed);color:#fff;padding:70px 20px;text-align:center}
+.hero h1{font-size:38px;margin-bottom:12px}
+.hero p{font-size:18px;opacity:.92;max-width:640px;margin:0 auto 22px}
+.hero a{display:inline-block;background:#fff;color:#2563eb;padding:12px 26px;border-radius:10px;font-weight:700;text-decoration:none}
+main{max-width:900px;margin:0 auto;padding:40px 20px}
+main img{width:100%;border-radius:14px;margin:10px 0 24px}
+footer{border-top:1px solid #e5e7eb;padding:20px;text-align:center;color:#6b7280;font-size:13px}
+</style>
+</head>
+<body>
+<section class="hero">
+  <h1>${esc(t.heroTitle)}</h1>
+  <p>${esc(t.heroSub)}</p>
+  <a href="#contenido">Ver detalles</a>
+</section>
+<main id="contenido">
+  ${t.image ? `<img src="${esc(t.image)}" alt="${esc(p.name)}" loading="lazy">` : ''}
+  <div>${esc(t.text).replace(/\n/g, '<br>')}</div>
+</main>
+<footer>© ${new Date().getFullYear()} — ${esc(t.title)}</footer>
+</body>
+</html>`;
+}
+
+window.genZip = async function () {
+  if (typeof JSZip === 'undefined') { alert('❌ JSZip no está cargado. Revisa la conexión a internet.'); return; }
+  const list = PRODUCTS.filter(p => SELECTED.has(p.id));
+  if (list.length === 0) { alert('Selecciona al menos un producto.'); return; }
+  log('📦 Generando ZIP con ' + list.length + ' página(s)...');
+  const zip = new JSZip();
+  list.forEach(p => {
+    zip.file(slugFor(p) + '.html', pageHTML(p));
+  });
+  const d = new Date().toISOString().slice(0, 10);
+  let x = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+  list.forEach(p => { x += '<url><loc>./' + slugFor(p) + '.html</loc><lastmod>' + d + '</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>\n'; });
+  x += '</urlset>';
+  zip.file('sitemap.xml', x);
+  const blob = await zip.generateAsync({ type: 'blob' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'paginas-' + d + '.zip';
+  a.click();
+  log('✅ ZIP descargado: ' + list.length + ' páginas + sitemap.xml');
+};
+
   // ===== SECCIONES PLEGABLES =====
 document.querySelectorAll('.card > h2').forEach(h => {
   const card = h.parentElement;
