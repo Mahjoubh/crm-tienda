@@ -1850,6 +1850,7 @@ class CRMApp {
                 <div class="card-header">
                     <h3><i class="fas fa-calendar-alt"></i> ${p('title')}</h3>
                     <button class="btn btn-primary" id="btn-new-post"><i class="fas fa-plus"></i> ${p('add')}</button>
+                    <button class="btn btn-secondary" id="btn-toggle-view" style="margin-left:8px;"><i class="fas fa-calendar-alt"></i>  Calendario</button>
                 </div>
                 <div class="card-body">
                     <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
