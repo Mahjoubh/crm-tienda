@@ -44,7 +44,7 @@ body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; ba
 .header h1 { font-size: 22px; color: #fff; }
 .header a { color: #fff; text-decoration: none; font-size: 14px; background: rgba(255,255,255,.15); padding: 8px 14px; border-radius: 8px; }
 .header a:hover { background: rgba(255,255,255,.25); }
-.card { background: #1e293b; border: 1px solid #334155; border-radius: 14px; padding: 20px; margin-bottom: 20px; }
+.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-bottom: 20px; transition: background .3s, border .3s; }
 .card h2 { font-size: 16px; color: #93c5fd; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
 .card h2::before { content: ''; width: 4px; height: 20px; background: #3b82f6; border-radius: 2px; }
 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
