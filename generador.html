@@ -333,6 +333,65 @@ themeBtn.addEventListener('click', () => {
   themeBtn.textContent = isLight ? '☀️' : '🌙';
   localStorage.setItem('gen_theme', isLight ? 'light' : 'dark');
 });
+// ===== IA: CASCADA FreeLLMAPI → Pollinations → Plantillas =====
+let AI_CUSTOM_PROMPT = localStorage.getItem('gen_ai_prompt') || '';
+const aiPromptBox = document.getElementById('aiPrompt');
+if (AI_CUSTOM_PROMPT) aiPromptBox.value = AI_CUSTOM_PROMPT;
+aiPromptBox.addEventListener('input', (e) => {
+  AI_CUSTOM_PROMPT = e.target.value;
+  localStorage.setItem('gen_ai_prompt', AI_CUSTOM_PROMPT);
+});
+
+function cleanJSON(t) {
+  t = (t || '').replace(/```json/g, '').replace(/```/g, '').trim();
+  const a = t.indexOf('{'), b = t.lastIndexOf('}');
+  if (a < 0 || b <= a) return null;
+  try { return JSON.parse(t.slice(a, b + 1)); } catch (e) { return null; }
+}
+
+async function callAI(prompt) {
+  // 1) FreeLLMAPI (config guardada en settings del CRM)
+  try {
+    const { data: cfg } = await supabase.from('settings').select('ai_base_url, ai_api_key, ai_model').eq('id', 1).single();
+    if (cfg && cfg.ai_base_url) {
+      const r = await fetch(cfg.ai_base_url.replace(/\/$/, '') + '/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (cfg.ai_api_key || '') },
+        body: JSON.stringify({
+          model: cfg.ai_model || 'auto',
+          messages: [
+            { role: 'system', content: 'Eres un experto en marketing y SEO. Responde ÚNICAMENTE con JSON válido, sin markdown.' },
+            { role: 'user', content: prompt }
+          ],
+          temperature: 0.8
+        })
+      });
+      if (r.ok) {
+        const j = await r.json();
+        const txt = ((j.choices || [])[0] || {}).message ? ((j.choices || [])[0]).message.content : '';
+        const parsed = cleanJSON(txt);
+        if (parsed) return { src: 'FreeLLMAPI', data: parsed };
+      }
+    }
+  } catch (e) { /* pasa al siguiente proveedor */ }
+  // 2) Pollinations (gratis, sin clave)
+  try {
+    const r = await fetch('https://text.pollinations.ai/' + encodeURIComponent(prompt));
+    if (r.ok) {
+      const parsed = cleanJSON(await r.text());
+      if (parsed) return { src: 'Pollinations', data: parsed };
+    }
+  } catch (e) { /* pasa al siguiente */ }
+  // 3) Plantillas automáticas
+  return { src: 'plantillas', data: null };
+}
+
+window.testAI = async function () {
+  const st = document.getElementById('ai-status');
+  st.textContent = '⏳ Probando...';
+  const res = await callAI('Responde solo con este JSON: {"ok": true, "mensaje": "conectado"}');
+  st.textContent = (res.src === 'plantillas') ? '⚠️ Sin IA: se usarán plantillas' : '✅ IA conectada vía ' + res.src;
+};
 
 // ===== SECCIONES PLEGABLES =====
 document.querySelectorAll('.card > h2').forEach(h => {
