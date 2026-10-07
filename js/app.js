@@ -2873,6 +2873,90 @@ class CRMApp {
         this.loadPages();
     }
 
+    // ================= GENERADOR IA =================
+    openAiModal() {
+        document.getElementById('ai-prompt').value = '';
+        document.getElementById('ai-status').innerHTML = '';
+        document.getElementById('ai-modal').style.display = 'flex';
+    }
+
+    async generatePageWithAI() {
+        const type = document.getElementById('ai-page-type').value;
+        const prompt = document.getElementById('ai-prompt').value.trim();
+        const statusEl = document.getElementById('ai-status');
+        const btn = document.getElementById('btn-run-ai');
+
+        if (!prompt) { statusEl.innerHTML = '<span style="color:#ef4444;">Escribe una descripción.</span>'; return; }
+
+        btn.disabled = true;
+        btn.textContent = '⏳ Generando...';
+        statusEl.innerHTML = '<span style="color:#2563eb;">Conectando con la IA...</span>';
+
+        try {
+            const { data: settings } = await supabase.from('settings').select('ai_base_url, ai_api_key, ai_model').eq('id', 1).single();
+            if (!settings || !settings.ai_base_url) throw new Error('Falta la URL de la IA en la base de datos.');
+
+            const systemPrompt = `Eres un generador de páginas web. Devuelve EXCLUSIVAMENTE un array JSON de objetos. Sin texto extra, sin markdown, solo el array JSON puro.
+            Tipos de bloques permitidos y sus campos en "data":
+            - hero: {title, subtitle, cta_text, cta_url}
+            - text: {content}
+            - image: {url, alt, caption} (usa URLs de imágenes de ejemplo de unsplash o placehold.co)
+            - features: {title, items: [{title, description}]}
+            Genera entre 3 y 5 bloques coherentes.`;
+
+            const userPrompt = `Tipo de página: ${type}. Descripción del negocio/objetivo: ${prompt}`;
+
+            const response = await fetch(settings.ai_base_url + '/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + settings.ai_api_key
+                },
+                body: JSON.stringify({
+                    model: settings.ai_model || 'auto',
+                    messages: [
+                        { role: 'system', content: systemPrompt },
+                        { role: 'user', content: userPrompt }
+                    ],
+                    temperature: 0.7
+                })
+            });
+
+            if (!response.ok) {
+                const errText = await response.text();
+                throw new Error('Error API: ' + response.status + ' ' + errText.substring(0, 100));
+            }
+
+            const result = await response.json();
+            let text = result.choices?.[0]?.message?.content || '';
+
+            // Limpiar posible markdown ```json ... ``` que a veces añaden las IAs
+            text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+
+            const newBlocks = JSON.parse(text);
+
+            if (!Array.isArray(newBlocks)) throw new Error('La IA no devolvió un array válido.');
+
+            // Asignar IDs únicos y añadir al editor
+            newBlocks.forEach(b => {
+                b.id = this.pageBlockId();
+                if (!b.data) b.data = {};
+                this.editorBlocks.push(b);
+            });
+
+            this.renderPageBlocks();
+            document.getElementById('ai-modal').style.display = 'none';
+            this.showToast('✨ Bloques generados con éxito. Revísalos y guarda.');
+
+        } catch (err) {
+            console.error(err);
+            statusEl.innerHTML = '<span style="color:#ef4444;">❌ ' + err.message + '</span>';
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '✨ Generar Bloques';
+        }
+    }
+
     formatDate(date) { return new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(date)); }
     formatCurrency(amount) { return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(amount); }
 }
