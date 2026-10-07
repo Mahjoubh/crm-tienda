@@ -2086,6 +2086,14 @@ class CRMApp {
 
     setupPostEvents() {
         const modal = document.getElementById('post-modal');
+        document.getElementById('btn-toggle-view').addEventListener('click', () => {
+            const isCalendar = document.getElementById('posts-container').dataset.view === 'calendar';
+            document.getElementById('posts-container').dataset.view = isCalendar ? 'table' : 'calendar';
+            document.getElementById('btn-toggle-view').innerHTML = isCalendar ? '<i class="fas fa-calendar-alt"></i> 📅 Calendario' : '<i class="fas fa-table"></i> 📋 Tabla';
+            if (isCalendar) this.renderPosts();
+            else this.renderCalendar();
+        });
+        document.getElementById('posts-container').dataset.view = 'table';
         document.getElementById('btn-new-post').addEventListener('click', () => {
             document.getElementById('post-modal-title').textContent = this.ptxt('add');
             document.getElementById('post-form').reset();
