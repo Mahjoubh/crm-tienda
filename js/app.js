@@ -1963,6 +1963,7 @@ class CRMApp {
                 </div>
             </div>
         `;
+        this.checkDuePosts();
         this.renderSocial();
         this.renderPosts();
         this.setupSocialEvents();
