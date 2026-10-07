@@ -97,6 +97,9 @@ class CRMApp {
             case 'reports':
                 await this.loadReports();
                 break;
+            case 'pages':
+                await this.loadPages();
+                break;
             case 'whatsapp':
                 await this.loadWhatsApp();
                 break;
