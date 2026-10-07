@@ -150,6 +150,17 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: #3b82f6
     <div id="status">Esperando acción...</div>
   </div>
 
+  <div class="card">
+    <h2>🧰 Herramientas</h2>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-alt" onclick="analyzeSEO()">🔍 Analizar SEO</button>
+      <button class="btn btn-alt" onclick="dlSitemap()">🗺️ sitemap.xml</button>
+      <button class="btn btn-alt" onclick="exportBackup()">💾 Exportar backup</button>
+      <button class="btn btn-alt" onclick="document.getElementById('impFile').click()">📂 Importar backup</button>
+      <input type="file" id="impFile" accept=".json" style="display:none" onchange="importBackup(this.files[0])">
+    </div>
+  </div>
+
 </div>
 
 <script type="module">
