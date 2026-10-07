@@ -2733,6 +2733,9 @@ class CRMApp {
         this.renderPageBlocks();
         document.getElementById('btn-back-pages').addEventListener('click', () => this.loadPages());
         document.getElementById('btn-save-page').addEventListener('click', () => this.savePageEditor());
+        document.getElementById('btn-ai-gen').addEventListener('click', () => this.openAiModal());
+        document.getElementById('btn-cancel-ai').addEventListener('click', () => document.getElementById('ai-modal').style.display = 'none');
+        document.getElementById('btn-run-ai').addEventListener('click', () => this.generatePageWithAI());
         content.querySelectorAll('[data-add]').forEach(b => b.addEventListener('click', () => this.addPageBlock(b.dataset.add)));
     }
 
