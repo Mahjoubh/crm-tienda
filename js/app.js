@@ -2708,6 +2708,27 @@ class CRMApp {
                 </div>
             </div>
         </div>
+        <div class="modal-overlay" id="ai-modal" style="display:none;">
+            <div class="modal">
+                <h3>✨ Generar Página con IA</h3>
+                <p style="color:#6b7280;font-size:14px;margin-bottom:12px;">Describe la página y la IA creará los bloques iniciales.</p>
+                <label>Tipo de página</label>
+                <select id="ai-page-type">
+                    <option value="landing">Landing Page (Captación)</option>
+                    <option value="about">Sobre Nosotros</option>
+                    <option value="services">Servicios / Características</option>
+                    <option value="promo">Promoción / Oferta</option>
+                    <option value="custom">Personalizada</option>
+                </select>
+                <label>Describe tu negocio o el objetivo</label>
+                <textarea id="ai-prompt" rows="4" placeholder="Ej: Panadería artesanal en Madrid. Destacar la masa madre y los ingredientes locales."></textarea>
+                <div id="ai-status" style="margin:10px 0;font-weight:bold;"></div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="btn-cancel-ai">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="btn-run-ai" style="background:#8b5cf6;border:none;">✨ Generar Bloques</button>
+                </div>
+            </div>
+        </div>
         `;
         this.renderPageBlocks();
         document.getElementById('btn-back-pages').addEventListener('click', () => this.loadPages());
