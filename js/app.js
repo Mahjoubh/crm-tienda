@@ -2025,6 +2025,8 @@ class CRMApp {
         this.setupPostEvents();
         this.renderMetrics();
         this.setupMetricsEvents();
+        this.renderMetrics();
+        this.setupMetricsEvents();
     }
 
     async renderSocial() {
