@@ -1926,6 +1926,9 @@ class CRMApp {
                         <input type="time" id="post-time">
                         <label>${p('content')}</label>
                         <textarea id="post-content" rows="3" placeholder="${p('contentPh')}"></textarea>
+                        <div style="font-size:12px;color:#6b7280;margin-top:4px;">
+                            <span id="char-counter">0</span> / <span id="char-limit">—</span> caracteres
+                        </div>
                         <label>${p('image')}</label>
                         <input type="file" id="post-image" accept="image/*">
                         <img id="post-image-preview" style="max-width:120px;margin-top:8px;display:none;border-radius:6px;">
