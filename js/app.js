@@ -320,6 +320,22 @@ class CRMApp {
                     if (n.stock <= min && o.stock > min) { this.playNotifSound(); this.showToast('📦 Stock bajo: ' + n.name); }
                 }
             })
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'social_posts' }, (payload) => {
+                const o = payload.old, n = payload.new;
+                if (o && n && o.status !== n.status && n.status === 'scheduled') {
+                    const now = new Date();
+                    const postDate = n.post_date ? new Date(n.post_date) : null;
+                    if (postDate) {
+                        const postTime = n.post_time ? n.post_time.split(':') : ['00','00'];
+                        postDate.setHours(parseInt(postTime[0]), parseInt(postTime[1]), 0, 0);
+                        const diffMin = (postDate - now) / 60000;
+                        if (diffMin >= -5 && diffMin <= 5) {
+                            this.playNotifSound();
+                            this.showToast(' Toca publicar: ' + (n.content || '').substring(0, 30));
+                        }
+                    }
+                }
+            })
             .subscribe();
     }
 
