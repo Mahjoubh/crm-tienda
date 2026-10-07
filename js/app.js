@@ -2110,6 +2110,40 @@ class CRMApp {
     }
 
     setupPostEvents() {
+        const charLimits = {
+            x: 280,
+            instagram: 2200,
+            facebook: 63206,
+            linkedin: 3000,
+            tiktok: 2200,
+            youtube: 5000,
+            threads: 500,
+            pinterest: 500
+        };
+        const updateCharCounter = () => {
+            const network = document.getElementById('post-network').value;
+            const content = document.getElementById('post-content').value;
+            const counter = document.getElementById('char-counter');
+            const limit = document.getElementById('char-limit');
+            const max = charLimits[network] || 0;
+            counter.textContent = content.length;
+            limit.textContent = max;
+            if (max > 0) {
+                if (content.length > max) {
+                    counter.style.color = '#ef4444';
+                    counter.style.fontWeight = '700';
+                } else if (content.length > max * 0.9) {
+                    counter.style.color = '#f59e0b';
+                    counter.style.fontWeight = '600';
+                } else {
+                    counter.style.color = '#10b981';
+                    counter.style.fontWeight = '400';
+                }
+            }
+        };
+        document.getElementById('post-content').addEventListener('input', updateCharCounter);
+        document.getElementById('post-network').addEventListener('change', updateCharCounter);
+        updateCharCounter();
         const modal = document.getElementById('post-modal');
         document.getElementById('btn-toggle-view').addEventListener('click', () => {
             const isCalendar = document.getElementById('posts-container').dataset.view === 'calendar';
