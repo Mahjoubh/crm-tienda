@@ -206,12 +206,13 @@ function renderProducts() {
     <div class="product-item">
       <input type="checkbox" ${SELECTED.has(p.id) ? 'checked' : ''} onchange="toggleSel('${p.id}', this.checked)">
       ${p.image_url ? `<img src="${p.image_url}">` : '<div style="width:40px;height:40px;background:#334155;border-radius:6px;"></div>'}
-      <div class="name">${p.name}</div>
+      <div class="name">${p.name} ${AI_RESULTS[p.id] ? '<span class="badge" style="background:#4c1d95;color:#e9d5ff;">✨ IA</span>' : ''}</div>
       <div class="meta">
         ${p.sku ? `<span class="badge">${p.sku}</span>` : ''}
         ${p.price ? `<span class="badge">${p.price} €</span>` : ''}
         ${p.category ? `<span class="badge">${p.category}</span>` : ''}
       </div>
+      <button class="btn btn-ai" style="padding:6px 10px;font-size:12px;" onclick="aiForProduct('${p.id}')" title="Generar textos con IA">✨</button>
     </div>
   `).join('');
   updateCount();
