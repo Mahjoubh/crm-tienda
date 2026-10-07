@@ -2681,6 +2681,7 @@ class CRMApp {
                 <h3><i class="fas fa-edit"></i> Editor: ${page.title}</h3>
                 <div style="display:flex;gap:8px;">
                     <button type="button" class="btn btn-secondary" id="btn-back-pages"><i class="fas fa-arrow-left"></i> Volver</button>
+                    <button type="button" class="btn btn-secondary" id="btn-ai-gen" style="background:#8b5cf6;color:#fff;border:none;"><i class="fas fa-magic"></i> ✨ Generar con IA</button>
                     <button type="button" class="btn btn-primary" id="btn-save-page"><i class="fas fa-save"></i> Guardar Página</button>
                 </div>
             </div>
