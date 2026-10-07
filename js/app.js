@@ -2078,6 +2078,7 @@ class CRMApp {
                                 </select>
                             </td>
                             <td>
+                                <button class="btn-duplicate btn-post-dup" data-id="${o.id}" style="background:#f59e0b;color:#fff;border:none;border-radius:6px;padding:6px 9px;cursor:pointer;margin-right:4px;" title="Duplicar"><i class="fas fa-copy"></i></button>
                                 <button class="btn-edit btn-post-edit" data-id="${o.id}"><i class="fas fa-edit"></i></button>
                                 <button class="btn-delete btn-post-del" data-id="${o.id}"><i class="fas fa-trash"></i></button>
                             </td>
