@@ -395,6 +395,42 @@ window.testAI = async function () {
   st.textContent = (res.src === 'plantillas') ? '⚠️ Sin IA: se usarán plantillas' : '✅ IA conectada vía ' + res.src;
 };
 
+  // ===== IA POR PRODUCTO =====
+const AI_RESULTS = {};
+
+function aiPromptFor(p) {
+  const extra = AI_CUSTOM_PROMPT ? '\nInstrucciones extra: ' + AI_CUSTOM_PROMPT : '';
+  return 'Eres un experto en marketing y SEO para tiendas online. Producto: "' + (p.name || '') + '". Categoría: ' + (p.category || 'general') + '. Precio: ' + (p.price != null ? p.price : '—') + ' €. Descripción base: ' + (p.description || 'sin descripción') + '.' + extra + '\nDevuelve ÚNICAMENTE este JSON válido: {"title": "título SEO de la página (máx 60 caracteres)", "hero_title": "titular atractivo (máx 70)", "hero_sub": "subtítulo persuasivo (máx 90)", "text": "descripción comercial de 60-90 palabras en español, sin markdown"}';
+}
+
+window.aiForProduct = async function (id) {
+  const p = PRODUCTS.find(x => x.id === id);
+  if (!p) return;
+  log('✨ IA generando para: ' + p.name + '...');
+  const res = await callAI(aiPromptFor(p));
+  if (res.src === 'plantillas' || !res.data) {
+    log('⚠️ Sin IA para ' + p.name + ' (se usará plantilla).');
+    return;
+  }
+  AI_RESULTS[id] = { data: res.data, src: res.src };
+  log('✅ IA (' + res.src + ') lista para: ' + p.name);
+  renderProducts();
+};
+
+window.aiForAllSelected = async function () {
+  const list = PRODUCTS.filter(p => SELECTED.has(p.id));
+  if (list.length === 0) { alert('Selecciona al menos un producto.'); return; }
+  document.getElementById('status').textContent = '';
+  for (let i = 0; i < list.length; i++) {
+    log('✨ IA ' + (i + 1) + '/' + list.length + ' → ' + list[i].name);
+    const res = await callAI(aiPromptFor(list[i]));
+    if (res.src !== 'plantillas' && res.data) AI_RESULTS[list[i].id] = { data: res.data, src: res.src };
+    await new Promise(r => setTimeout(r, 700));
+  }
+  log('🎉 IA completada para los seleccionados.');
+  renderProducts();
+};
+
 // ===== SECCIONES PLEGABLES =====
 document.querySelectorAll('.card > h2').forEach(h => {
   const card = h.parentElement;
