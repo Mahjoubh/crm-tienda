@@ -443,7 +443,113 @@ window.aiForAllSelected = async function () {
   renderProducts();
 };
 
-// ===== SECCIONES PLEGABLES =====
+// ===== HERRAMIENTAS: SEO, SITEMAP, BACKUP =====
+function finalTextsFor(p) {
+  const ai = AI_RESULTS[p.id] ? AI_RESULTS[p.id].data : null;
+  return {
+    title: (ai && ai.title) || fill(document.getElementById('tplTitle').value, p) || p.name,
+    heroTitle: (ai && ai.hero_title) || fill(document.getElementById('tplHeroTitle').value, p) || p.name,
+    heroSub: (ai && ai.hero_sub) || fill(document.getElementById('tplHeroSub').value, p),
+    text: (ai && ai.text) || fill(document.getElementById('tplText').value, p) || p.description || '',
+    image: fill(document.getElementById('tplImage').value, p) || p.image_url || ''
+  };
+}
+
+function slugFor(p) {
+  return slugify(fill(document.getElementById('tplSlug').value, p) || p.name + '-' + (p.sku || p.id.slice(0, 8)));
+}
+
+window.analyzeSEO = function () {
+  const list = PRODUCTS.filter(p => SELECTED.has(p.id));
+  if (list.length === 0) { alert('Selecciona al menos un producto.'); return; }
+  let crit = 0, warn = 0, info = 0;
+  const lines = [];
+  list.forEach(p => {
+    const t = finalTextsFor(p);
+    const pre = p.name + ': ';
+    if (!t.title || t.title.length < 10) { lines.push('❌ ' + pre + 'Title vacío o muy corto (' + (t.title || '').length + ' car.)'); crit++; }
+    else if (t.title.length > 60) { lines.push('⚠️ ' + pre + 'Title largo (' + t.title.length + ' car., máx 60)'); warn++; }
+    if (!t.heroTitle || t.heroTitle.length > 70) { lines.push('⚠️ ' + pre + 'H1 vacío o largo (' + (t.heroTitle || '').length + ' car.)'); warn++; }
+    if (!t.text || t.text.length < 100) { lines.push('⚠️ ' + pre + 'Descripción corta (' + (t.text || '').length + ' car., mín 100)'); warn++; }
+    if (!t.image) { lines.push('ℹ️ ' + pre + 'Sin imagen'); info++; }
+  });
+  const report = '📊 ANÁLISIS SEO — ' + list.length + ' páginas\n' +
+    (lines.length ? lines.join('\n') : '✅ Sin problemas detectados') +
+    '\n\nResumen: ' + crit + ' críticos · ' + warn + ' avisos · ' + info + ' info';
+  alert(report);
+  log('📊 SEO: ' + crit + ' críticos, ' + warn + ' avisos, ' + info + ' info');
+};
+
+window.dlSitemap = function () {
+  const list = PRODUCTS.filter(p => SELECTED.has(p.id));
+  if (list.length === 0) { alert('Selecciona al menos un producto.'); return; }
+  const base = location.origin + location.pathname.replace('generador.html', '');
+  const d = new Date().toISOString().slice(0, 10);
+  let x = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+  list.forEach(p => {
+    x += '<url><loc>' + base + 'pagina.html?slug=' + slugFor(p) + '</loc><lastmod>' + d + '</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>\n';
+  });
+  x += '</urlset>';
+  const b = new Blob([x], { type: 'application/xml' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(b);
+  a.download = 'sitemap.xml';
+  a.click();
+  log('🗺️ sitemap.xml descargado con ' + list.length + ' URLs');
+};
+
+window.exportBackup = function () {
+  const backup = {
+    exported_at: new Date().toISOString(),
+    selected: [...SELECTED],
+    ai_results: AI_RESULTS,
+    templates: {
+      title: document.getElementById('tplTitle').value,
+      slug: document.getElementById('tplSlug').value,
+      heroTitle: document.getElementById('tplHeroTitle').value,
+      heroSub: document.getElementById('tplHeroSub').value,
+      text: document.getElementById('tplText').value,
+      image: document.getElementById('tplImage').value
+    },
+    prompt: AI_CUSTOM_PROMPT
+  };
+  const b = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(b);
+  a.download = 'generador-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+  a.click();
+  log('💾 Backup exportado');
+};
+
+window.importBackup = function (f) {
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = function () {
+    try {
+      const o = JSON.parse(r.result);
+      if (o.selected) SELECTED = new Set(o.selected);
+      if (o.ai_results) Object.assign(AI_RESULTS, o.ai_results);
+      if (o.templates) {
+        document.getElementById('tplTitle').value = o.templates.title || '';
+        document.getElementById('tplSlug').value = o.templates.slug || '';
+        document.getElementById('tplHeroTitle').value = o.templates.heroTitle || '';
+        document.getElementById('tplHeroSub').value = o.templates.heroSub || '';
+        document.getElementById('tplText').value = o.templates.text || '';
+        document.getElementById('tplImage').value = o.templates.image || '';
+      }
+      if (o.prompt != null) {
+        AI_CUSTOM_PROMPT = o.prompt;
+        localStorage.setItem('gen_ai_prompt', o.prompt);
+        document.getElementById('aiPrompt').value = o.prompt;
+      }
+      renderProducts();
+      log('📂 Backup importado: ' + SELECTED.size + ' seleccionados');
+    } catch (e) { alert('JSON inválido.'); }
+  };
+  r.readAsText(f);
+};
+
+  // ===== SECCIONES PLEGABLES =====
 document.querySelectorAll('.card > h2').forEach(h => {
   const card = h.parentElement;
   const tog = document.createElement('span');
