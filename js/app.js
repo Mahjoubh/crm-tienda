@@ -2101,6 +2101,7 @@ class CRMApp {
                 }
             });
         });
+        container.querySelectorAll('.btn-post-dup').forEach(b => b.addEventListener('click', () => this.duplicatePost(b.dataset.id)));
         container.querySelectorAll('.btn-post-edit').forEach(b => b.addEventListener('click', () => this.editPost(b.dataset.id)));
         container.querySelectorAll('.btn-post-del').forEach(b => b.addEventListener('click', () => this.deletePost(b.dataset.id)));
     }
