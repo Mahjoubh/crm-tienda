@@ -2314,6 +2314,25 @@ class CRMApp {
             });
         });
     }
+    async checkDuePosts() {
+        const now = new Date();
+        const today = now.toISOString().split('T')[0];
+        const { data } = await supabase.from('social_posts').select('*').eq('status', 'scheduled').eq('post_date', today);
+        if (data && data.length > 0) {
+            data.forEach(p => {
+                if (p.post_time) {
+                    const [h, m] = p.post_time.split(':').map(Number);
+                    const postTime = new Date();
+                    postTime.setHours(h, m, 0, 0);
+                    const diffMin = (postTime - now) / 60000;
+                    if (diffMin >= -5 && diffMin <= 5) {
+                        this.playNotifSound();
+                        this.showToast('⏰ Toca publicar ahora: ' + (p.content || '').substring(0, 30));
+                    }
+                }
+            });
+        }
+    }
 
     async deletePost(id) {
         if (!confirm(this.ptxt('del') + '?')) return;
