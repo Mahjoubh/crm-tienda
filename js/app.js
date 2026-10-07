@@ -2601,6 +2601,7 @@ class CRMApp {
         `;
         container.querySelectorAll('.btn-page-edit').forEach(btn => btn.addEventListener('click', () => this.loadPageEditorById(btn.dataset.id)));
         container.querySelectorAll('.btn-page-del').forEach(btn => btn.addEventListener('click', () => this.deletePage(btn.dataset.id)));
+        container.querySelectorAll('.btn-page-view').forEach(btn => btn.addEventListener('click', () => this.openLink('pagina.html?slug=' + encodeURIComponent(btn.dataset.slug) + (btn.dataset.status === 'published' ? '' : '&preview=1'))));
     }
 
     setupPageEvents() {
