@@ -2108,6 +2108,19 @@ class CRMApp {
             ar: { title:'مخطط المنشورات', add:'منشور جديد', network:'الشبكة', date:'التاريخ', time:'الوقت', content:'المحتوى', contentPh:'اكتب نص المنشور...', image:'صورة', status:'الحالة', idea:'فكرة', scheduled:'مجدول', published:'منشور', allStatus:'كل الحالات', allNetworks:'كل الشبكات', empty:'لا توجد منشورات.', cancel:'إلغاء', save:'حفظ', edit:'تعديل', del:'حذف', actions:'إجراءات' }
         };
     }
+    metricsDict() {
+        return {
+            es: { title:'Métricas', add:'Registrar métrica', network:'Red', date:'Fecha', followers:'Seguidores', reach:'Alcance', likes:'Likes', empty:'No hay métricas registradas.', cancel:'Cancelar', save:'Guardar', edit:'Editar', del:'Eliminar', actions:'Acciones', allNetworks:'Todas las redes', followersChart:'Evolución de seguidores' },
+            fr: { title:'Métriques', add:'Enregistrer une métrique', network:'Réseau', date:'Date', followers:'Abonnés', reach:'Portée', likes:'J\'aime', empty:'Aucune métrique.', cancel:'Annuler', save:'Enregistrer', edit:'Modifier', del:'Supprimer', actions:'Actions', allNetworks:'Tous les réseaux', followersChart:'Évolution des abonnés' },
+            ar: { title:'المقاييس', add:'تسجيل مقياس', network:'الشبكة', date:'التاريخ', followers:'المتابعون', reach:'الوصول', likes:'الإعجابات', empty:'لا توجد مقاييس.', cancel:'إلغاء', save:'حفظ', edit:'تعديل', del:'حذف', actions:'إجراءات', allNetworks:'كل الشبكات', followersChart:'تطور المتابعين' }
+        };
+    }
+
+    mtxt(k) {
+        const d = this.metricsDict();
+        const L = this.lang || 'es';
+        return (d[L] && d[L][k]) || d.es[k] || k;
+    }
 
     ptxt(k) {
         const d = this.postsDict();
