@@ -2086,6 +2086,20 @@ class CRMApp {
                 </tbody>
             </table>
         `;
+            container.querySelectorAll('.status-select').forEach(select => {
+            select.addEventListener('change', async (e) => {
+                const id = e.target.dataset.id;
+                const newStatus = e.target.value;
+                const { error } = await supabase.from('social_posts').update({ status: newStatus }).eq('id', id);
+                if (error) {
+                    alert(' ' + error.message);
+                    this.renderPosts();
+                } else {
+                    this.showToast('✅ Estado actualizado');
+                    if (this.soundEnabled) this.playNotifSound();
+                }
+            });
+        });
         container.querySelectorAll('.btn-post-edit').forEach(b => b.addEventListener('click', () => this.editPost(b.dataset.id)));
         container.querySelectorAll('.btn-post-del').forEach(b => b.addEventListener('click', () => this.deletePost(b.dataset.id)));
     }
