@@ -2140,6 +2140,81 @@ class CRMApp {
         document.getElementById('post-status').value = data.status || 'idea';
         document.getElementById('post-modal').style.display = 'flex';
     }
+    async renderCalendar() {
+        const container = document.getElementById('posts-container');
+        if (!container) return;
+        const { data: posts, error } = await supabase.from('social_posts').select('*').order('post_date');
+        if (error) { container.innerHTML = '<p class="error">❌ ' + error.message + '</p>'; return; }
+        const now = new Date();
+        const year = this.calYear || now.getFullYear();
+        const month = this.calMonth !== undefined ? this.calMonth : now.getMonth();
+        this.calYear = year;
+        this.calMonth = month;
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const daysInMonth = lastDay.getDate();
+        const startWeekday = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
+        const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+        const meta = this.socialMeta();
+        const st = this.postStatusMeta();
+        const postsByDay = {};
+        (posts || []).forEach(p => {
+            if (p.post_date) {
+                const d = new Date(p.post_date).getDate();
+                if (!postsByDay[d]) postsByDay[d] = [];
+                postsByDay[d].push(p);
+            }
+        });
+        let html = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <button class="btn btn-secondary" id="cal-prev">◀</button>
+            <h3 style="margin:0;">${monthNames[month]} ${year}</h3>
+            <button class="btn btn-secondary" id="cal-next">▶</button>
+        </div>`;
+        html += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;">';
+        ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].forEach(d => {
+            html += `<div style="text-align:center;font-weight:600;font-size:12px;padding:6px;background:#f3f4f6;border-radius:4px;">${d}</div>`;
+        });
+        for (let i = 0; i < startWeekday; i++) {
+            html += '<div style="min-height:80px;background:#fafafa;border-radius:4px;"></div>';
+        }
+        for (let d = 1; d <= daysInMonth; d++) {
+            const dayPosts = postsByDay[d] || [];
+            const isToday = (d === now.getDate() && month === now.getMonth() && year === now.getFullYear());
+            html += `<div style="min-height:80px;border:1px solid ${isToday ? '#3b82f6' : '#e5e7eb'};border-radius:4px;padding:4px;cursor:pointer;" class="cal-day" data-day="${d}">`;
+            html += `<div style="font-size:11px;font-weight:600;color:${isToday ? '#3b82f6' : '#6b7280'};margin-bottom:2px;">${d}</div>`;
+            dayPosts.forEach(p => {
+                const m = meta[p.network] || { color: '#6b7280' };
+                const s = st[p.status] || st.idea;
+                html += `<div style="font-size:10px;padding:2px 4px;margin-bottom:2px;background:${m.color}20;border-left:3px solid ${m.color};border-radius:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.label.split(' ')[0]} ${(p.content || '').substring(0, 15)}</div>`;
+            });
+            html += '</div>';
+        }
+        html += '</div>';
+        container.innerHTML = html;
+        document.getElementById('cal-prev').addEventListener('click', () => {
+            this.calMonth = month === 0 ? 11 : month - 1;
+            if (month === 0) this.calYear--;
+            this.renderCalendar();
+        });
+        document.getElementById('cal-next').addEventListener('click', () => {
+            this.calMonth = month === 11 ? 0 : month + 1;
+            if (month === 11) this.calYear++;
+            this.renderCalendar();
+        });
+        container.querySelectorAll('.cal-day').forEach(day => {
+            day.addEventListener('click', () => {
+                const d = day.dataset.day;
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${d.padStart(2, '0')}`;
+                document.getElementById('post-modal-title').textContent = this.ptxt('add');
+                document.getElementById('post-form').reset();
+                document.getElementById('post-id').value = '';
+                document.getElementById('post-image-url').value = '';
+                document.getElementById('post-image-preview').style.display = 'none';
+                document.getElementById('post-date').value = dateStr;
+                document.getElementById('post-modal').style.display = 'flex';
+            });
+        });
+    }
 
     async deletePost(id) {
         if (!confirm(this.ptxt('del') + '?')) return;
