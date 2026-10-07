@@ -2893,7 +2893,8 @@ class CRMApp {
         statusEl.innerHTML = '<span style="color:#2563eb;">Conectando con la IA...</span>';
 
         try {
-            const { data: settings } = await supabase.from('settings').select('ai_base_url, ai_api_key, ai_model').eq('id', 1).single();
+            const { data: settings, error: setErr } = await supabase.from('settings').select('ai_base_url, ai_api_key, ai_model').eq('id', 1).single();
+            if (setErr) throw new Error('Settings: ' + setErr.message);
             if (!settings || !settings.ai_base_url) throw new Error('Falta la URL de la IA en la base de datos.');
 
             const systemPrompt = `Eres un generador de páginas web. Devuelve EXCLUSIVAMENTE un array JSON de objetos. Sin texto extra, sin markdown, solo el array JSON puro.
