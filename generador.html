@@ -130,6 +130,17 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: #3b82f6
   </div>
 
   <div class="card">
+    <h2>🤖 IA: FreeLLMAPI → Pollinations → Plantillas</h2>
+    <label>Prompt personalizado (se aplica a todos los productos)</label>
+    <textarea id="aiPrompt" placeholder="Ej: Escribe en tono profesional y cercano, destaca la garantía de 2 años y el envío gratis en 24h."></textarea>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+      <button class="btn btn-ai" onclick="testAI()">🔌 Probar conexión IA</button>
+      <span id="ai-status" class="badge">Sin probar</span>
+    </div>
+    <p style="font-size:12px;color:var(--text-muted);margin-top:8px;">💡 Si FreeLLMAPI no responde (CORS o programa cerrado), se usa Pollinations (gratis, online). Si tampoco, plantillas automáticas.</p>
+  </div>
+
+  <div class="card">
     <h2>⚡ Generar</h2>
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
       <button class="btn" onclick="generatePages()">🚀 Generar páginas y guardar en el CRM</button>
