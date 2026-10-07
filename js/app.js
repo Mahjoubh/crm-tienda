@@ -2660,6 +2660,192 @@ class CRMApp {
         return (text || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
     }
     
+   // ================= EDITOR VISUAL DE PÁGINAS =================
+    async loadPageEditorById(id) {
+        const { data } = await supabase.from('pages').select('*').eq('id', id).single();
+        if (!data) return;
+        this.loadPageEditor(data);
+    }
+
+    loadPageEditor(page) {
+        this.editingPage = page;
+        let blocks = [];
+        try { blocks = (page.content && page.content.blocks) ? page.content.blocks : []; } catch (e) { blocks = []; }
+        this.editorBlocks = blocks.map(b => ({ id: b.id || this.pageBlockId(), type: b.type || 'text', data: b.data || {} }));
+        const content = document.querySelector('.content');
+        content.innerHTML = `
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-edit"></i> Editor: ${page.title}</h3>
+                <div style="display:flex;gap:8px;">
+                    <button type="button" class="btn btn-secondary" id="btn-back-pages"><i class="fas fa-arrow-left"></i> Volver</button>
+                    <button type="button" class="btn btn-primary" id="btn-save-page"><i class="fas fa-save"></i> Guardar Página</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="settings-form">
+                    <div class="grid-2col">
+                        <div><label>Título</label><input type="text" id="pe-title" value="${(page.title || '').replace(/"/g, '&quot;')}"></div>
+                        <div><label>Slug</label><input type="text" id="pe-slug" value="${page.slug}"></div>
+                        <div><label>Estado</label>
+                            <select id="pe-status">
+                                <option value="draft" ${page.status === 'draft' ? 'selected' : ''}>📝 Borrador</option>
+                                <option value="published" ${page.status === 'published' ? 'selected' : ''}>✅ Publicado</option>
+                            </select>
+                        </div>
+                    </div>
+                    <h4 style="margin:16px 0 8px;">🧱 Bloques de la página</h4>
+                    <div id="pe-blocks"></div>
+                    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+                        <button type="button" class="btn btn-primary" data-add="hero"><i class="fas fa-star"></i> + Hero</button>
+                        <button type="button" class="btn btn-primary" data-add="text"><i class="fas fa-align-left"></i> + Texto</button>
+                        <button type="button" class="btn btn-primary" data-add="image"><i class="fas fa-image"></i> + Imagen</button>
+                        <button type="button" class="btn btn-primary" data-add="features"><i class="fas fa-list-ul"></i> + Características</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        `;
+        this.renderPageBlocks();
+        document.getElementById('btn-back-pages').addEventListener('click', () => this.loadPages());
+        document.getElementById('btn-save-page').addEventListener('click', () => this.savePageEditor());
+        content.querySelectorAll('[data-add]').forEach(b => b.addEventListener('click', () => this.addPageBlock(b.dataset.add)));
+    }
+
+    pageBlockId() { return 'blk-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7); }
+
+    addPageBlock(type) {
+        const defaults = {
+            hero: { title: 'Título principal', subtitle: '', cta_text: '', cta_url: '' },
+            text: { content: '' },
+            image: { url: '', alt: '', caption: '' },
+            features: { title: 'Características', items: [{ title: '', description: '' }] }
+        };
+        this.editorBlocks.push({ id: this.pageBlockId(), type: type, data: defaults[type] });
+        this.renderPageBlocks();
+    }
+
+    removePageBlock(id) { this.editorBlocks = this.editorBlocks.filter(b => b.id !== id); this.renderPageBlocks(); }
+
+    movePageBlock(id, dir) {
+        const i = this.editorBlocks.findIndex(b => b.id === id);
+        const j = i + dir;
+        if (i < 0 || j < 0 || j >= this.editorBlocks.length) return;
+        [this.editorBlocks[i], this.editorBlocks[j]] = [this.editorBlocks[j], this.editorBlocks[i]];
+        this.renderPageBlocks();
+    }
+
+    blockFieldsHTML(b) {
+        const d = b.data || {};
+        const esc = (s) => (s == null ? '' : String(s)).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        if (b.type === 'hero') {
+            return `
+            <label>Título</label><input type="text" data-field="title" value="${esc(d.title)}">
+            <label>Subtítulo</label><input type="text" data-field="subtitle" value="${esc(d.subtitle)}">
+            <label>Texto del botón</label><input type="text" data-field="cta_text" value="${esc(d.cta_text)}">
+            <label>Enlace del botón</label><input type="text" data-field="cta_url" value="${esc(d.cta_url)}" placeholder="#contacto o https://...">
+            `;
+        }
+        if (b.type === 'text') {
+            return `<label>Contenido</label><textarea rows="4" data-field="content">${esc(d.content)}</textarea>`;
+        }
+        if (b.type === 'image') {
+            return `
+            <label>URL de la imagen</label><input type="text" data-field="url" value="${esc(d.url)}" placeholder="https://...">
+            <label>Texto alternativo</label><input type="text" data-field="alt" value="${esc(d.alt)}">
+            <label>Pie de foto</label><input type="text" data-field="caption" value="${esc(d.caption)}">
+            `;
+        }
+        if (b.type === 'features') {
+            return `
+            <label>Título de la sección</label><input type="text" data-field="title" value="${esc(d.title)}">
+            ${(d.items || []).map((it, idx) => `
+            <div style="border:1px dashed #d1d5db;border-radius:8px;padding:10px;margin-bottom:8px;">
+                <label>Característica ${idx + 1}</label><input type="text" data-field="item_title" data-idx="${idx}" value="${esc(it.title)}">
+                <label>Descripción</label><input type="text" data-field="item_desc" data-idx="${idx}" value="${esc(it.description)}">
+                <button type="button" class="btn btn-secondary feat-del" data-id="${b.id}" data-idx="${idx}" style="padding:4px 8px;color:#ef4444;">🗑 Quitar</button>
+            </div>`).join('')}
+            <button type="button" class="btn btn-secondary feat-add" data-id="${b.id}"><i class="fas fa-plus"></i> Añadir característica</button>
+            `;
+        }
+        return '<p>Bloque desconocido</p>';
+    }
+
+    renderPageBlocks() {
+        const wrap = document.getElementById('pe-blocks');
+        if (!wrap) return;
+        if (this.editorBlocks.length === 0) { wrap.innerHTML = '<p style="color:#6b7280;">Aún no hay bloques. Añade el primero con los botones de abajo.</p>'; return; }
+        const labels = { hero: '🌟 Hero', text: '📝 Texto', image: '🖼 Imagen', features: '📋 Características' };
+        wrap.innerHTML = this.editorBlocks.map((b, i) => `
+        <div class="card" style="margin-bottom:12px;border:1px solid #e5e7eb;" data-block="${b.id}">
+            <div class="card-header" style="background:#f9fafb;">
+                <h4 style="margin:0;">${labels[b.type] || b.type}</h4>
+                <div style="display:flex;gap:6px;">
+                    <button type="button" class="btn btn-secondary blk-up" data-id="${b.id}" style="padding:4px 8px;" ${i === 0 ? 'disabled' : ''}>⬆</button>
+                    <button type="button" class="btn btn-secondary blk-down" data-id="${b.id}" style="padding:4px 8px;" ${i === this.editorBlocks.length - 1 ? 'disabled' : ''}>⬇</button>
+                    <button type="button" class="btn btn-secondary blk-del" data-id="${b.id}" style="padding:4px 8px;color:#ef4444;">🗑</button>
+                </div>
+            </div>
+            <div class="card-body">${this.blockFieldsHTML(b)}</div>
+        </div>`).join('');
+        wrap.querySelectorAll('.blk-up').forEach(x => x.addEventListener('click', () => this.movePageBlock(x.dataset.id, -1)));
+        wrap.querySelectorAll('.blk-down').forEach(x => x.addEventListener('click', () => this.movePageBlock(x.dataset.id, 1)));
+        wrap.querySelectorAll('.blk-del').forEach(x => x.addEventListener('click', () => this.removePageBlock(x.dataset.id)));
+        wrap.querySelectorAll('[data-field]').forEach(inp => inp.addEventListener('input', () => this.syncBlockField(inp)));
+        wrap.querySelectorAll('.feat-add').forEach(btn => btn.addEventListener('click', () => this.addFeatureItem(btn.dataset.id)));
+        wrap.querySelectorAll('.feat-del').forEach(btn => btn.addEventListener('click', () => this.delFeatureItem(btn.dataset.id, parseInt(btn.dataset.idx))));
+    }
+
+    syncBlockField(inp) {
+        const card = inp.closest('[data-block]');
+        if (!card) return;
+        const b = this.editorBlocks.find(x => x.id === card.dataset.block);
+        if (!b) return;
+        const f = inp.dataset.field;
+        const v = inp.value;
+        if (f === 'item_title' || f === 'item_desc') {
+            const idx = parseInt(inp.dataset.idx);
+            if (!b.data.items) b.data.items = [];
+            if (!b.data.items[idx]) b.data.items[idx] = { title: '', description: '' };
+            if (f === 'item_title') b.data.items[idx].title = v; else b.data.items[idx].description = v;
+        } else {
+            b.data[f] = v;
+        }
+    }
+
+    addFeatureItem(blockId) {
+        const b = this.editorBlocks.find(x => x.id === blockId);
+        if (!b) return;
+        if (!b.data.items) b.data.items = [];
+        b.data.items.push({ title: '', description: '' });
+        this.renderPageBlocks();
+    }
+
+    delFeatureItem(blockId, idx) {
+        const b = this.editorBlocks.find(x => x.id === blockId);
+        if (!b || !b.data.items) return;
+        b.data.items.splice(idx, 1);
+        this.renderPageBlocks();
+    }
+
+    async savePageEditor() {
+        const page = this.editingPage;
+        if (!page) return;
+        const title = document.getElementById('pe-title').value.trim();
+        const slug = this.slugify(document.getElementById('pe-slug').value) || this.slugify(title);
+        const status = document.getElementById('pe-status').value;
+        if (!title || !slug) { alert('El título y el slug son obligatorios'); return; }
+        const rowData = { title: title, slug: slug, status: status, content: { blocks: this.editorBlocks } };
+        const { error } = await supabase.from('pages').update(rowData).eq('id', page.id);
+        if (error) {
+            if (error.code === '23505') alert('❌ Ya existe otra página con ese slug');
+            else alert('❌ Error: ' + error.message);
+            return;
+        }
+        this.showToast('✅ Página guardada');
+        this.loadPages();
+    }
+
     formatDate(date) { return new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(date)); }
     formatCurrency(amount) { return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(amount); }
 }
