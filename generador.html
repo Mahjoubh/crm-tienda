@@ -301,10 +301,12 @@ window.generatePages = async function() {
 async function loadProducts() {
   const { data, error } = await supabase.from('products').select('*').eq('active', true).order('name');
   if (error) {
+    document.getElementById('conn-status').textContent = '❌ Sin conexión con el CRM';
     document.getElementById('productList').innerHTML = '<p style="color:#ef4444;padding:20px;">❌ ' + error.message + '</p>';
     return;
   }
   PRODUCTS = data || [];
+  document.getElementById('conn-status').textContent = '✅ CRM conectado: ' + PRODUCTS.length + ' productos';
   renderProducts();
 }
 
