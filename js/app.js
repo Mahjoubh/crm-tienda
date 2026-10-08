@@ -1725,7 +1725,7 @@ class CRMApp {
         });
     }
     fixStoreButton() {
-        const candidates = document.querySelectorAll('.sidebar a, .sidebar button, .sidebar .btn');
+        const candidates = []; // Los botones del sidebar ahora se estilan con CSS (.sidebar-action-btn)
         candidates.forEach(el => {
             if ((el.textContent || '').trim().includes('Ver Tienda Pública')) {
                 el.style.display = 'block';
