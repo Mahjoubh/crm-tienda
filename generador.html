@@ -10,39 +10,38 @@
 body.light { --bg:#f1f5f9; --bg-card:#ffffff; --bg-input:#ffffff; --border:#e2e8f0; --text:#0f172a; --text-muted:#64748b; --text-label:#334155; --accent:#2563eb; --accent-2:#7c3aed; }
 * { box-sizing:border-box; margin:0; padding:0; }
 body { font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; padding:20px; transition:background .3s,color .3s; }
-#theme-toggle { position:fixed; top:20px; right:20px; z-index:99; background:var(--bg-card); border:1px solid var(--border); width:44px; height:44px; border-radius:50%; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(0,0,0,.15); transition:transform .2s; }
-#theme-toggle:hover { transform:scale(1.1); }
+#theme-toggle { position:fixed; top:20px; right:20px; z-index:99; background:var(--bg-card); border:1px solid var(--border); width:44px; height:44px; border-radius:50%; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(0,0,0,.15); }
 .container { max-width:1200px; margin:0 auto; }
 .header { background:linear-gradient(135deg,#3b82f6,#8b5cf6); border-radius:14px; padding:20px 24px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; }
 .header h1 { font-size:22px; color:#fff; }
 .header a { color:#fff; text-decoration:none; font-size:14px; background:rgba(255,255,255,.15); padding:8px 14px; border-radius:8px; }
-.header a:hover { background:rgba(255,255,255,.25); }
-.card { background:var(--bg-card); border:1px solid var(--border); border-radius:14px; padding:20px; margin-bottom:20px; transition:background .3s,border .3s; }
+.card { background:var(--bg-card); border:1px solid var(--border); border-radius:14px; padding:20px; margin-bottom:20px; }
 .card h2 { font-size:16px; color:var(--text); margin-bottom:12px; display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none; }
 .card h2::before { content:''; width:4px; height:20px; background:var(--accent); border-radius:2px; }
 .card h2 .tog { margin-left:auto; font-size:13px; color:var(--text-muted); }
 .card.collapsed > *:not(h2) { display:none; }
-.row { display:flex; flex-direction:column; gap:20px; }
 label { display:block; font-size:13px; font-weight:600; color:var(--text-label); margin-bottom:6px; }
-input[type="text"], textarea, select { width:100%; padding:10px 12px; background:var(--bg-input); color:var(--text); border:1.5px solid var(--border); border-radius:8px; font-family:inherit; font-size:14px; margin-bottom:10px; transition:background .3s,color .3s,border .3s; }
+input[type="text"], input[type="number"], textarea, select { width:100%; padding:10px 12px; background:var(--bg-input); color:var(--text); border:1.5px solid var(--border); border-radius:8px; font-family:inherit; font-size:14px; margin-bottom:10px; }
 textarea { min-height:90px; resize:vertical; }
-input:focus, textarea:focus, select:focus { outline:none; border-color:var(--accent); }
 .btn { background:linear-gradient(135deg,#3b82f6,#8b5cf6); color:#fff; border:none; padding:10px 18px; border-radius:8px; font-weight:600; cursor:pointer; font-size:14px; }
-.btn:hover { opacity:.9; }
 .btn:disabled { opacity:.5; cursor:not-allowed; }
 .btn-alt { background:var(--border); color:var(--text); }
 .btn-ai { background:linear-gradient(135deg,#8b5cf6,#ec4899); }
-.badge { display:inline-block; padding:3px 10px; background:var(--bg-input); border:1px solid var(--border); color:var(--text-muted); border-radius:50px; font-size:12px; font-weight:600; margin-right:6px; }
+.badge { display:inline-block; padding:3px 10px; background:var(--bg-input); border:1px solid var(--border); color:var(--text-muted); border-radius:50px; font-size:12px; font-weight:600; }
 .vars { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
 .vars span { background:var(--bg-input); border:1px solid var(--border); padding:4px 10px; border-radius:50px; font-size:12px; color:var(--text-muted); cursor:pointer; font-family:monospace; }
-.vars span:hover { background:var(--border); }
-.product-list { max-height:400px; overflow-y:auto; border:1px solid var(--border); border-radius:10px; padding:8px; }
-.product-item { display:flex; align-items:center; gap:10px; padding:8px; border-radius:6px; background:var(--bg-input); margin-bottom:6px; font-size:14px; }
-.product-item input { width:auto; margin:0; }
+.product-list, .page-list { max-height:400px; overflow-y:auto; border:1px solid var(--border); border-radius:10px; padding:8px; }
+.product-item, .page-item { display:flex; align-items:center; gap:10px; padding:8px; border-radius:6px; background:var(--bg-input); margin-bottom:6px; font-size:14px; flex-wrap:wrap; }
+.product-item input[type="checkbox"] { width:auto; margin:0; }
 .product-item img { width:40px; height:40px; object-fit:cover; border-radius:6px; background:var(--border); }
-.product-item .name { flex:1; font-weight:600; }
-.product-item .meta { font-size:12px; color:var(--text-muted); }
+.product-item .name, .page-item .name { flex:1; font-weight:600; min-width:150px; }
+.product-item .meta, .page-item .meta { font-size:12px; color:var(--text-muted); }
+.mini-btn { padding:6px 10px; font-size:12px; border-radius:6px; }
 #status { margin-top:10px; font-size:13px; color:var(--text-muted); padding:10px; background:var(--bg-input); border:1px solid var(--border); border-radius:8px; min-height:40px; white-space:pre-wrap; font-family:monospace; }
+.modal-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:1000; align-items:center; justify-content:center; padding:20px; overflow-y:auto; }
+.modal-box { background:var(--bg-card); border:1px solid var(--border); border-radius:14px; max-width:800px; width:100%; max-height:90vh; overflow-y:auto; padding:20px; position:relative; }
+.blk-edit { border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:10px; background:var(--bg-input); }
+.blk-edit h4 { font-size:13px; color:var(--text-muted); margin-bottom:8px; }
 </style>
 </head>
 <body>
@@ -57,69 +56,76 @@ input:focus, textarea:focus, select:focus { outline:none; border-color:var(--acc
     </div>
   </div>
 
-  <div class="row">
-    <div class="card">
-      <h2>📦 1. Productos disponibles</h2>
-      <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">Selecciona los productos que quieres convertir en páginas.</p>
-      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
-        <button class="btn btn-alt" onclick="markAll(true)">Seleccionar todos</button>
-        <button class="btn btn-alt" onclick="markAll(false)">Quitar todos</button>
-        <span id="selCount" class="badge">0 seleccionados</span>
-      </div>
-      <div class="product-list" id="productList">
-        <p style="text-align:center;color:var(--text-muted);padding:20px;">Cargando productos desde el CRM...</p>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>✏️ 2. Plantilla por página</h2>
-      <label>Título de la página</label>
-      <input type="text" id="tplTitle" placeholder="{name} — Mi Tienda">
-      <label>Slug (URL)</label>
-      <input type="text" id="tplSlug" placeholder="producto-{sku}">
-      <label>Bloque Hero — Título</label>
-      <input type="text" id="tplHeroTitle" placeholder="{name}">
-      <label>Bloque Hero — Subtítulo</label>
-      <input type="text" id="tplHeroSub" placeholder="{price} € — {category}">
-      <label>Bloque Texto — Descripción</label>
-      <textarea id="tplText" placeholder="{description}&#10;&#10;Disponible en nuestra tienda."></textarea>
-      <label>Bloque Imagen — URL</label>
-      <input type="text" id="tplImage" placeholder="{image_url}">
-      <p style="font-size:12px;color:var(--text-muted);margin-top:6px;">💡 Haz clic en una variable para insertarla:</p>
-      <div class="vars" id="varsList"></div>
-    </div>
-  </div>
-
   <div class="card">
-    <h2>🤖 3. IA: FreeLLMAPI → Pollinations → Plantillas</h2>
-    <label>Prompt personalizado (se aplica a todos los productos)</label>
-    <textarea id="aiPrompt" placeholder="Ej: Escribe en tono profesional y cercano, destaca la garantía de 2 años y el envío gratis en 24h."></textarea>
+    <h2>🤖 1. IA — Crear y generar con IA</h2>
+    <label>Describe la página nueva (prompt libre)</label>
+    <textarea id="aiPagePrompt" placeholder="Ej: Página de presentación para mi taller de reparación de móviles en Sevilla. Quiero destacar reparación en 24h y garantía de 6 meses."></textarea>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">
+      <button class="btn btn-ai" onclick="createPageWithAI(this)">✨ Crear página con IA</button>
+      <span class="badge">La página se crea en Borrador y distinta cada vez</span>
+    </div>
+    <label>Prompt personalizado para productos (opcional)</label>
+    <textarea id="aiPrompt" placeholder="Ej: Tono profesional y cercano, destaca envío gratis en 24h y garantía de 2 años."></textarea>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
       <button class="btn btn-ai" onclick="testAI()">🔌 Probar conexión IA</button>
-      <button class="btn btn-ai" onclick="aiForAllSelected()">✨ IA para todos los seleccionados</button>
+      <button class="btn btn-ai" onclick="aiForAllSelected(this)">✨ IA para productos seleccionados</button>
       <span id="ai-status" class="badge">Sin probar</span>
     </div>
-    <p style="font-size:12px;color:var(--text-muted);margin-top:8px;">💡 Si FreeLLMAPI no responde (CORS o programa cerrado), se usa Pollinations (gratis, online). Si tampoco, plantillas automáticas.</p>
+    <p style="font-size:12px;color:var(--text-muted);margin-top:8px;">💡 Cascada: FreeLLMAPI → Pollinations → plantillas.</p>
   </div>
 
   <div class="card">
-    <h2>📚 4. Biblioteca de imágenes</h2>
-    <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">Sube fotos o genera imágenes con IA organizadas por categoría. Asígnalas a las páginas desde el editor.</p>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+    <h2>📄 2. Páginas</h2>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">Edita, regenera con IA, mira o elimina las páginas creadas.</p>
+    <div class="page-list" id="pageList"><p style="text-align:center;color:var(--text-muted);padding:20px;">Cargando páginas...</p></div>
+  </div>
+
+  <div class="card">
+    <h2>📦 3. Productos</h2>
+    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+      <button class="btn btn-alt" onclick="markAll(true)">Seleccionar todos</button>
+      <button class="btn btn-alt" onclick="markAll(false)">Quitar todos</button>
+      <span id="selCount" class="badge">0 seleccionados</span>
+    </div>
+    <div class="product-list" id="productList"><p style="text-align:center;color:var(--text-muted);padding:20px;">Cargando productos...</p></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
+      <button class="btn" onclick="generatePages(this)">🚀 Generar páginas de seleccionados</button>
+      <button class="btn btn-ai" onclick="previewOne()">👁 Vista previa</button>
+    </div>
+  </div>
+
+  <div class="card" data-collapsed="1">
+    <h2>✏️ 4. Plantilla por página (generación masiva)</h2>
+    <label>Título de la página</label>
+    <input type="text" id="tplTitle" placeholder="{name} — Mi Tienda">
+    <label>Slug (URL)</label>
+    <input type="text" id="tplSlug" placeholder="producto-{sku}">
+    <label>Bloque Hero — Título</label>
+    <input type="text" id="tplHeroTitle" placeholder="{name}">
+    <label>Bloque Hero — Subtítulo</label>
+    <input type="text" id="tplHeroSub" placeholder="{price} € — {category}">
+    <label>Bloque Texto — Descripción</label>
+    <textarea id="tplText" placeholder="{description}&#10;&#10;Disponible en nuestra tienda."></textarea>
+    <label>Bloque Imagen — URL</label>
+    <input type="text" id="tplImage" placeholder="{image_url}">
+    <p style="font-size:12px;color:var(--text-muted);margin-top:6px;">💡 Haz clic en una variable para insertarla:</p>
+    <div class="vars" id="varsList"></div>
+  </div>
+
+  <div class="card">
+    <h2>📚 5. Biblioteca de imágenes</h2>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">Imágenes organizadas por categoría (producto, servicio, página...).</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
       <button class="btn btn-alt" onclick="openLib()">📚 Abrir biblioteca</button>
       <span id="lib-count" class="badge">0 imágenes</span>
     </div>
   </div>
 
   <div class="card">
-    <h2>⚡ 5. Generar y herramientas</h2>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
-      <button class="btn" onclick="generatePages()">🚀 Generar páginas y guardar en el CRM</button>
-      <button class="btn btn-ai" onclick="previewOne()">👁 Vista previa</button>
-    </div>
+    <h2>🧰 6. Herramientas</h2>
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
       <button class="btn btn-alt" onclick="analyzeSEO()">🔍 Analizar SEO</button>
-      <button class="btn btn-alt" onclick="genZip()">📦 Generar ZIP</button>
+      <button class="btn btn-alt" onclick="genZip(this)">📦 Generar ZIP</button>
       <button class="btn btn-alt" onclick="dlSitemap()">🗺️ sitemap.xml</button>
       <button class="btn btn-alt" onclick="exportBackup()">💾 Exportar backup</button>
       <button class="btn btn-alt" onclick="document.getElementById('impFile').click()">📂 Importar backup</button>
@@ -130,8 +136,9 @@ input:focus, textarea:focus, select:focus { outline:none; border-color:var(--acc
 
 </div>
 
-<div id="lib-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;align-items:center;justify-content:center;padding:20px;overflow-y:auto;">
-  <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;max-width:900px;width:100%;max-height:90vh;overflow-y:auto;padding:20px;position:relative;">
+<!-- MODAL BIBLIOTECA -->
+<div id="lib-modal" class="modal-bg">
+  <div class="modal-box" style="max-width:900px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
       <h3 style="color:var(--text);">📚 Biblioteca de imágenes</h3>
       <button class="btn btn-alt" onclick="closeLib()" style="padding:6px 12px;position:absolute;top:16px;right:16px;">✕ Cerrar</button>
@@ -139,24 +146,60 @@ input:focus, textarea:focus, select:focus { outline:none; border-color:var(--acc
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
       <div>
         <label>Generar con IA</label>
-        <input type="text" id="lib-prompt" placeholder="Ej: producto profesional, fondo blanco, alta calidad">
-        <select id="lib-model" style="margin-top:8px;">
-          <option value="flux">FLUX (calidad)</option>
-          <option value="turbo">Turbo (rápido)</option>
-        </select>
-        <button class="btn btn-ai" onclick="libGen(this)" style="margin-top:8px;">🎨 Generar</button>
+        <input type="text" id="lib-prompt" placeholder="Ej: producto profesional, fondo blanco">
+        <select id="lib-model"><option value="flux">FLUX (calidad)</option><option value="turbo">Turbo (rápido)</option></select>
+        <button class="btn btn-ai" onclick="libGen(this)">🎨 Generar</button>
       </div>
       <div>
         <label>Subir imágenes</label>
-        <input type="file" id="lib-upload" accept="image/*" multiple style="margin-top:8px;">
-        <label style="margin-top:8px;">Categoría</label>
+        <input type="file" id="lib-upload" accept="image/*" multiple>
+        <label>Categoría</label>
         <select id="lib-cat">
           <option value="general">📁 General</option>
+          <option value="productos">📦 Productos</option>
+          <option value="servicios">🛠️ Servicios</option>
+          <option value="paginas">📄 Páginas</option>
         </select>
       </div>
     </div>
-    <div id="lib-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;">
-      <p style="color:var(--text-muted);">Cargando...</p>
+    <div id="lib-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;"></div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR PRODUCTO -->
+<div id="product-modal" class="modal-bg">
+  <div class="modal-box" style="max-width:600px;">
+    <h3 style="color:var(--text);margin-bottom:14px;">✏️ Editar producto</h3>
+    <input type="hidden" id="pm-id">
+    <label>Nombre</label><input type="text" id="pm-name">
+    <label>SKU</label><input type="text" id="pm-sku">
+    <label>Precio (€)</label><input type="number" id="pm-price" step="0.01">
+    <label>Coste (€)</label><input type="number" id="pm-cost" step="0.01">
+    <label>Stock</label><input type="number" id="pm-stock">
+    <label>Categoría</label><input type="text" id="pm-category">
+    <label>Descripción</label><textarea id="pm-description"></textarea>
+    <label>URL imagen</label><input type="text" id="pm-image">
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button class="btn btn-alt" onclick="closeProductModal()">Cancelar</button>
+      <button class="btn" onclick="saveProduct(this)">💾 Guardar producto</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR PÁGINA -->
+<div id="page-modal" class="modal-bg">
+  <div class="modal-box">
+    <h3 style="color:var(--text);margin-bottom:14px;">✏️ Editar página</h3>
+    <input type="hidden" id="pge-id">
+    <label>Título</label><input type="text" id="pge-title">
+    <label>Slug</label><input type="text" id="pge-slug">
+    <label>Estado</label>
+    <select id="pge-status"><option value="draft">📝 Borrador</option><option value="published">✅ Publicado</option></select>
+    <label style="margin-top:10px;">🧱 Bloques</label>
+    <div id="pge-blocks"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;">
+      <button class="btn btn-alt" onclick="closePageModal()">Cancelar</button>
+      <button class="btn" onclick="savePageEdit(this)">💾 Guardar página</button>
     </div>
   </div>
 </div>
@@ -169,111 +212,51 @@ let SELECTED = new Set();
 let ACTIVE_INPUT = null;
 const AI_RESULTS = {};
 let LIB_IMAGES = [];
+let PAGE_EDIT_BLOCKS = [];
 let AI_CUSTOM_PROMPT = localStorage.getItem('gen_ai_prompt') || '';
-
 const VARS = ['{name}','{sku}','{price}','{cost}','{category}','{description}','{image_url}','{stock}'];
 
 // ===== UTILIDADES =====
-function slugify(s) {
-  return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
-}
+function slugify(s) { return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,''); }
+function esc(s) { return (s == null ? '' : String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function fill(tpl, p) {
   return (tpl || '')
-    .replace(/{name}/g, p.name || '')
-    .replace(/{sku}/g, p.sku || '')
-    .replace(/{price}/g, p.price != null ? String(p.price) : '')
-    .replace(/{cost}/g, p.cost != null ? String(p.cost) : '')
-    .replace(/{category}/g, p.category || '')
-    .replace(/{description}/g, p.description || '')
-    .replace(/{image_url}/g, p.image_url || '')
-    .replace(/{stock}/g, p.stock != null ? String(p.stock) : '');
+    .replace(/{name}/g, p.name || '').replace(/{sku}/g, p.sku || '')
+    .replace(/{price}/g, p.price != null ? String(p.price) : '').replace(/{cost}/g, p.cost != null ? String(p.cost) : '')
+    .replace(/{category}/g, p.category || '').replace(/{description}/g, p.description || '')
+    .replace(/{image_url}/g, p.image_url || '').replace(/{stock}/g, p.stock != null ? String(p.stock) : '');
 }
 function showToast(text) {
   let wrap = document.getElementById('toast-wrap');
   if (!wrap) { wrap = document.createElement('div'); wrap.id = 'toast-wrap'; wrap.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:1000;display:flex;flex-direction:column;gap:8px;'; document.body.appendChild(wrap); }
   const t = document.createElement('div');
   t.style.cssText = 'background:#111827;color:#fff;padding:10px 14px;border-radius:10px;font-size:13px;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:280px;';
-  t.textContent = text;
-  wrap.appendChild(t);
+  t.textContent = text; wrap.appendChild(t);
   setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .4s'; setTimeout(() => t.remove(), 400); }, 2500);
 }
-function log(msg) {
-  const st = document.getElementById('status');
-  st.textContent += '\n' + msg;
-  st.scrollTop = st.scrollHeight;
+function log(msg) { const st = document.getElementById('status'); st.textContent += '\n' + msg; st.scrollTop = st.scrollHeight; }
+async function withLoading(btn, fn) {
+  const orig = btn.innerHTML;
+  btn.disabled = true; btn.innerHTML = '⏳ Generando...';
+  try { await fn(); } finally { btn.disabled = false; btn.innerHTML = orig; }
 }
 
 // ===== VARIABLES CLICABLES =====
-function renderVars() {
-  document.getElementById('varsList').innerHTML = VARS.map(v => `<span onclick="insertVar('${v}')">${v}</span>`).join('');
-}
+function renderVars() { document.getElementById('varsList').innerHTML = VARS.map(v => `<span onclick="insertVar('${v}')">${v}</span>`).join(''); }
 window.insertVar = function(v) {
   if (!ACTIVE_INPUT) { alert('Haz clic primero en un campo de texto'); return; }
-  const el = ACTIVE_INPUT;
-  const start = el.selectionStart, end = el.selectionEnd;
+  const el = ACTIVE_INPUT, start = el.selectionStart, end = el.selectionEnd;
   el.value = el.value.slice(0, start) + v + el.value.slice(end);
-  el.focus();
-  el.selectionStart = el.selectionEnd = start + v.length;
+  el.focus(); el.selectionStart = el.selectionEnd = start + v.length;
 };
-document.querySelectorAll('input[type="text"], textarea').forEach(el => {
-  el.addEventListener('focus', () => { ACTIVE_INPUT = el; });
-});
-
-// ===== PRODUCTOS =====
-function renderProducts() {
-  const list = document.getElementById('productList');
-  if (PRODUCTS.length === 0) {
-    list.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:20px;">No hay productos en el CRM todavía.</p>';
-    return;
-  }
-  list.innerHTML = PRODUCTS.map(p => `
-    <div class="product-item">
-      <input type="checkbox" ${SELECTED.has(p.id) ? 'checked' : ''} onchange="toggleSel('${p.id}', this.checked)">
-      ${p.image_url ? `<img src="${p.image_url}">` : '<div style="width:40px;height:40px;background:var(--border);border-radius:6px;"></div>'}
-      <div class="name">${p.name} ${AI_RESULTS[p.id] ? '<span class="badge" style="background:#4c1d95;color:#e9d5ff;">✨ IA</span>' : ''}</div>
-      <div class="meta">
-        ${p.sku ? `<span class="badge">${p.sku}</span>` : ''}
-        ${p.price ? `<span class="badge">${p.price} €</span>` : ''}
-        ${p.category ? `<span class="badge">${p.category}</span>` : ''}
-      </div>
-      <button class="btn btn-ai" style="padding:6px 10px;font-size:12px;" onclick="aiForProduct('${p.id}')" title="Generar textos con IA">✨</button>
-    </div>
-  `).join('');
-  updateCount();
-}
-window.toggleSel = function(id, on) {
-  if (on) SELECTED.add(id); else SELECTED.delete(id);
-  updateCount();
-};
-window.markAll = function(on) {
-  if (on) PRODUCTS.forEach(p => SELECTED.add(p.id));
-  else SELECTED.clear();
-  renderProducts();
-};
-function updateCount() {
-  document.getElementById('selCount').textContent = SELECTED.size + ' seleccionados';
-}
-async function loadProducts() {
-  const { data, error } = await supabase.from('products').select('*').eq('active', true).order('name');
-  if (error) {
-    document.getElementById('conn-status').textContent = '❌ Sin conexión con el CRM';
-    document.getElementById('productList').innerHTML = '<p style="color:#ef4444;padding:20px;">❌ ' + error.message + '</p>';
-    return;
-  }
-  PRODUCTS = data || [];
-  document.getElementById('conn-status').textContent = '✅ CRM conectado: ' + PRODUCTS.length + ' productos';
-  renderProducts();
-}
+document.querySelectorAll('input[type="text"], textarea').forEach(el => el.addEventListener('focus', () => { ACTIVE_INPUT = el; }));
 
 // ===== IA: CASCADA =====
 const aiPromptBox = document.getElementById('aiPrompt');
 if (AI_CUSTOM_PROMPT) aiPromptBox.value = AI_CUSTOM_PROMPT;
-aiPromptBox.addEventListener('input', (e) => {
-  AI_CUSTOM_PROMPT = e.target.value;
-  localStorage.setItem('gen_ai_prompt', AI_CUSTOM_PROMPT);
-});
+aiPromptBox.addEventListener('input', (e) => { AI_CUSTOM_PROMPT = e.target.value; localStorage.setItem('gen_ai_prompt', AI_CUSTOM_PROMPT); });
 function cleanJSON(t) {
-  t = (t || '').replace(/```json/g, '').replace(/```/g, '').trim();
+  t = (t || '').replace(/```json/g,'').replace(/```/g,'').trim();
   const a = t.indexOf('{'), b = t.lastIndexOf('}');
   if (a < 0 || b <= a) return null;
   try { return JSON.parse(t.slice(a, b + 1)); } catch (e) { return null; }
@@ -282,21 +265,16 @@ async function callAI(prompt) {
   try {
     const { data: cfg } = await supabase.from('settings').select('ai_base_url, ai_api_key, ai_model').eq('id', 1).single();
     if (cfg && cfg.ai_base_url) {
-      const r = await fetch(cfg.ai_base_url.replace(/\/$/, '') + '/chat/completions', {
+      const r = await fetch(cfg.ai_base_url.replace(/\/$/,'') + '/chat/completions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (cfg.ai_api_key || '') },
-        body: JSON.stringify({
-          model: cfg.ai_model || 'auto',
-          messages: [
-            { role: 'system', content: 'Eres un experto en marketing y SEO. Responde ÚNICAMENTE con JSON válido, sin markdown.' },
-            { role: 'user', content: prompt }
-          ],
-          temperature: 0.8
-        })
+        body: JSON.stringify({ model: cfg.ai_model || 'auto', messages: [
+          { role: 'system', content: 'Eres un experto en marketing y SEO. Responde ÚNICAMENTE con JSON válido, sin markdown.' },
+          { role: 'user', content: prompt }], temperature: 0.8 })
       });
       if (r.ok) {
         const j = await r.json();
-        const txt = ((j.choices || [])[0] || {}).message ? ((j.choices || [])[0]).message.content : '';
+        const txt = ((j.choices || [])[0] || {}).message ? j.choices[0].message.content : '';
         const parsed = cleanJSON(txt);
         if (parsed) return { src: 'FreeLLMAPI', data: parsed };
       }
@@ -304,10 +282,7 @@ async function callAI(prompt) {
   } catch (e) {}
   try {
     const r = await fetch('https://text.pollinations.ai/' + encodeURIComponent(prompt));
-    if (r.ok) {
-      const parsed = cleanJSON(await r.text());
-      if (parsed) return { src: 'Pollinations', data: parsed };
-    }
+    if (r.ok) { const parsed = cleanJSON(await r.text()); if (parsed) return { src: 'Pollinations', data: parsed }; }
   } catch (e) {}
   return { src: 'plantillas', data: null };
 }
@@ -319,33 +294,231 @@ window.testAI = async function() {
 };
 function aiPromptFor(p) {
   const extra = AI_CUSTOM_PROMPT ? '\nInstrucciones extra: ' + AI_CUSTOM_PROMPT : '';
-  return 'Eres un experto en marketing y SEO para tiendas online. Producto: "' + (p.name || '') + '". Categoría: ' + (p.category || 'general') + '. Precio: ' + (p.price != null ? p.price : '—') + ' €. Descripción base: ' + (p.description || 'sin descripción') + '.' + extra + '\nDevuelve ÚNICAMENTE este JSON válido (sin markdown, sin texto extra):\n{"title":"título SEO máx 60 car.","hero_title":"titular atractivo máx 70","hero_sub":"subtítulo persuasivo máx 90","text":"descripción comercial 60-90 palabras","features":[{"title":"Característica 1","description":"detalle corto"},{"title":"Característica 2","description":"detalle corto"},{"title":"Característica 3","description":"detalle corto"}],"cta_text":"texto del botón (ej: Comprar ahora)","cta_url":"#comprar"}';
+  return 'Eres un experto en marketing y SEO para tiendas online. Producto: "' + (p.name || '') + '". Categoría: ' + (p.category || 'general') + '. Precio: ' + (p.price != null ? p.price : '—') + ' €. Descripción base: ' + (p.description || 'sin descripción') + '.' + extra + '\nDevuelve ÚNICAMENTE este JSON válido:\n{"title":"título SEO máx 60","hero_title":"titular máx 70","hero_sub":"subtítulo máx 90","text":"descripción 60-90 palabras","features":[{"title":"C1","description":"d"},{"title":"C2","description":"d"},{"title":"C3","description":"d"}],"cta_text":"Comprar ahora","cta_url":"#comprar"}';
 }
 window.aiForProduct = async function(id) {
   const p = PRODUCTS.find(x => x.id === id);
   if (!p) return;
   log('✨ IA generando para: ' + p.name + '...');
   const res = await callAI(aiPromptFor(p));
-  if (res.src === 'plantillas' || !res.data) { log('⚠️ Sin IA para ' + p.name + ' (se usará plantilla).'); return; }
+  if (res.src === 'plantillas' || !res.data) { log('⚠️ Sin IA para ' + p.name); return; }
   AI_RESULTS[id] = { data: res.data, src: res.src };
   log('✅ IA (' + res.src + ') lista para: ' + p.name);
   renderProducts();
 };
-window.aiForAllSelected = async function() {
-  const list = PRODUCTS.filter(p => SELECTED.has(p.id));
-  if (list.length === 0) { alert('Selecciona al menos un producto.'); return; }
-  document.getElementById('status').textContent = '';
-  for (let i = 0; i < list.length; i++) {
-    log('✨ IA ' + (i + 1) + '/' + list.length + ' → ' + list[i].name);
-    const res = await callAI(aiPromptFor(list[i]));
-    if (res.src !== 'plantillas' && res.data) AI_RESULTS[list[i].id] = { data: res.data, src: res.src };
-    await new Promise(r => setTimeout(r, 700));
-  }
-  log('🎉 IA completada para los seleccionados.');
-  renderProducts();
+window.aiForAllSelected = function(btn) {
+  withLoading(btn, async () => {
+    const list = PRODUCTS.filter(p => SELECTED.has(p.id));
+    if (list.length === 0) { alert('Selecciona al menos un producto.'); return; }
+    document.getElementById('status').textContent = '';
+    for (let i = 0; i < list.length; i++) {
+      log('✨ IA ' + (i + 1) + '/' + list.length + ' → ' + list[i].name);
+      const res = await callAI(aiPromptFor(list[i]));
+      if (res.src !== 'plantillas' && res.data) AI_RESULTS[list[i].id] = { data: res.data, src: res.src };
+      await new Promise(r => setTimeout(r, 700));
+    }
+    log('🎉 IA completada para los seleccionados.');
+    renderProducts();
+  });
 };
 
-// ===== HERRAMIENTAS =====
+// ===== CREAR PÁGINA CON IA (prompt libre) =====
+window.createPageWithAI = function(btn) {
+  const prompt = document.getElementById('aiPagePrompt').value.trim();
+  if (!prompt) { alert('Escribe una descripción de la página.'); return; }
+  withLoading(btn, async () => {
+    log('✨ Creando página con IA...');
+    const res = await callAI('Crea una página web profesional. Tema: ' + prompt + '\nDevuelve ÚNICAMENTE este JSON válido:\n{"title":"título de la página","hero_title":"titular atractivo","hero_sub":"subtítulo","text":"texto principal 60-120 palabras","features":[{"title":"...","description":"..."}],"cta_text":"texto botón","cta_url":"#contacto"}');
+    if (res.src === 'plantillas' || !res.data) { log('⚠️ La IA no respondió; prueba de nuevo.'); alert('⚠️ La IA no respondió. Comprueba la conexión o inténtalo de nuevo.'); return; }
+    const d = res.data;
+    const blocks = [];
+    blocks.push({ id: 'blk-h-' + Date.now().toString(36), type: 'hero', data: { title: d.hero_title || d.title || 'Nueva página', subtitle: d.hero_sub || '', cta_text: d.cta_text || 'Contactar', cta_url: d.cta_url || '#contacto' } });
+    if (d.text) blocks.push({ id: 'blk-t-' + Date.now().toString(36), type: 'text', data: { content: d.text } });
+    if (d.features && d.features.length) blocks.push({ id: 'blk-f-' + Date.now().toString(36), type: 'features', data: { title: 'Características', items: d.features } });
+    let slug = slugify(d.title || prompt.slice(0, 30)) || 'pagina';
+    const { data: existing } = await supabase.from('pages').select('slug');
+    const slugs = new Set((existing || []).map(x => x.slug));
+    if (slugs.has(slug)) slug += '-' + Date.now().toString(36).slice(-4);
+    const { error } = await supabase.from('pages').insert([{ title: d.title || 'Nueva página', slug: slug, status: 'draft', content: { blocks: blocks } }]);
+    if (error) { log('❌ ' + error.message); alert('❌ ' + error.message); return; }
+    log('✅ Página creada (borrador): /' + slug + ' vía ' + res.src);
+    showToast('✅ Página creada en Borrador');
+    document.getElementById('aiPagePrompt').value = '';
+    loadPagesList();
+  });
+};
+
+// ===== PÁGINAS =====
+async function loadPagesList() {
+  const { data, error } = await supabase.from('pages').select('*').order('updated_at', { ascending: false });
+  const box = document.getElementById('pageList');
+  if (error) { box.innerHTML = '<p style="color:#ef4444;padding:12px;">❌ ' + error.message + '</p>'; return; }
+  if (!data || data.length === 0) { box.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:20px;">No hay páginas todavía. Crea una con ✨ en la sección 1.</p>'; return; }
+  box.innerHTML = data.map(p => `
+    <div class="page-item">
+      <div class="name">${esc(p.title)}</div>
+      <div class="meta"><code>/${esc(p.slug)}</code> · ${p.status === 'published' ? '✅ Publicado' : '📝 Borrador'}</div>
+      <button class="btn btn-ai mini-btn" onclick="regenPageAI('${p.id}', this)">✨ IA</button>
+      <button class="btn mini-btn" onclick="openPageModal('${p.id}')">✏️ Editar</button>
+      <button class="btn btn-alt mini-btn" onclick="window.open('pagina.html?slug=${encodeURIComponent(p.slug)}${p.status === 'published' ? '' : '&preview=1'}','_blank')">👁 Ver</button>
+      <button class="btn btn-alt mini-btn" style="color:#ef4444;" onclick="deletePage('${p.id}')">🗑</button>
+    </div>
+  `).join('');
+}
+window.deletePage = async function(id) {
+  if (!confirm('¿Eliminar esta página?')) return;
+  const { error } = await supabase.from('pages').delete().eq('id', id);
+  if (error) alert('❌ ' + error.message);
+  else { showToast('🗑 Página eliminada'); loadPagesList(); }
+};
+window.regenPageAI = function(id, btn) {
+  const prompt = prompt('Describe el nuevo contenido de la página:');
+  if (!prompt) return;
+  withLoading(btn, async () => {
+    const res = await callAI('Reescribe esta página web. Tema: ' + prompt + '\nDevuelve ÚNICAMENTE este JSON válido:\n{"title":"título","hero_title":"titular","hero_sub":"subtítulo","text":"texto 60-120 palabras","features":[{"title":"...","description":"..."}],"cta_text":"botón","cta_url":"#contacto"}');
+    if (res.src === 'plantillas' || !res.data) { alert('⚠️ La IA no respondió.'); return; }
+    const d = res.data;
+    const blocks = [];
+    blocks.push({ id: 'blk-h-' + Date.now().toString(36), type: 'hero', data: { title: d.hero_title || d.title || '', subtitle: d.hero_sub || '', cta_text: d.cta_text || '', cta_url: d.cta_url || '' } });
+    if (d.text) blocks.push({ id: 'blk-t-' + Date.now().toString(36), type: 'text', data: { content: d.text } });
+    if (d.features && d.features.length) blocks.push({ id: 'blk-f-' + Date.now().toString(36), type: 'features', data: { title: 'Características', items: d.features } });
+    const { error } = await supabase.from('pages').update({ title: d.title || 'Página', content: { blocks: blocks } }).eq('id', id);
+    if (error) alert('❌ ' + error.message);
+    else { showToast('✅ Página regenerada con IA'); loadPagesList(); }
+  });
+};
+window.openPageModal = async function(id) {
+  const { data } = await supabase.from('pages').select('*').eq('id', id).single();
+  if (!data) return;
+  document.getElementById('pge-id').value = data.id;
+  document.getElementById('pge-title').value = data.title || '';
+  document.getElementById('pge-slug').value = data.slug || '';
+  document.getElementById('pge-status').value = data.status || 'draft';
+  let blocks = [];
+  try { blocks = (data.content && data.content.blocks) ? data.content.blocks : []; } catch (e) { blocks = []; }
+  PAGE_EDIT_BLOCKS = JSON.parse(JSON.stringify(blocks));
+  const wrap = document.getElementById('pge-blocks');
+  const labels = { hero: '🌟 Hero', text: '📝 Texto', image: '🖼 Imagen', features: '📋 Características' };
+  wrap.innerHTML = blocks.length ? blocks.map(b => {
+    const d = b.data || {};
+    let fields = '';
+    if (b.type === 'hero') fields = `
+      <label>Título</label><input type="text" data-field="title" value="${esc(d.title)}">
+      <label>Subtítulo</label><input type="text" data-field="subtitle" value="${esc(d.subtitle)}">
+      <label>Texto botón</label><input type="text" data-field="cta_text" value="${esc(d.cta_text)}">
+      <label>Enlace botón</label><input type="text" data-field="cta_url" value="${esc(d.cta_url)}">`;
+    else if (b.type === 'text') fields = `<label>Contenido</label><textarea data-field="content">${esc(d.content)}</textarea>`;
+    else if (b.type === 'image') fields = `
+      <label>URL</label><input type="text" data-field="url" value="${esc(d.url)}">
+      <label>Alt</label><input type="text" data-field="alt" value="${esc(d.alt)}">
+      <label>Pie</label><input type="text" data-field="caption" value="${esc(d.caption)}">`;
+    else if (b.type === 'features') fields = `
+      <label>Título sección</label><input type="text" data-field="title" value="${esc(d.title)}">
+      <label>Características (una por línea: título | descripción)</label>
+      <textarea data-field="items">${(d.items || []).map(it => (it.title || '') + ' | ' + (it.description || '')).join('\n')}</textarea>`;
+    return `<div class="blk-edit" data-block="${b.id}" data-type="${b.type}"><h4>${labels[b.type] || b.type}</h4>${fields}</div>`;
+  }).join('') : '<p style="color:var(--text-muted);">Esta página no tiene bloques.</p>';
+  document.getElementById('page-modal').style.display = 'flex';
+};
+window.closePageModal = function() { document.getElementById('page-modal').style.display = 'none'; };
+window.savePageEdit = function(btn) {
+  withLoading(btn, async () => {
+    const id = document.getElementById('pge-id').value;
+    const blocks = PAGE_EDIT_BLOCKS.map(orig => {
+      const card = document.querySelector('#pge-blocks [data-block="' + orig.id + '"]');
+      const data = JSON.parse(JSON.stringify(orig.data || {}));
+      if (card) card.querySelectorAll('[data-field]').forEach(inp => {
+        const f = inp.dataset.field;
+        if (f === 'items') data.items = inp.value.split('\n').map(l => { const parts = l.split('|'); return { title: (parts[0] || '').trim(), description: (parts.slice(1).join('|') || '').trim() }; }).filter(it => it.title);
+        else data[f] = inp.value;
+      });
+      return { id: orig.id, type: orig.type, data: data };
+    });
+    const row = {
+      title: document.getElementById('pge-title').value.trim(),
+      slug: slugify(document.getElementById('pge-slug').value) || slugify(document.getElementById('pge-title').value),
+      status: document.getElementById('pge-status').value,
+      content: { blocks: blocks }
+    };
+    const { error } = await supabase.from('pages').update(row).eq('id', id);
+    if (error) { alert('❌ ' + error.message); return; }
+    showToast('💾 Página guardada');
+    closePageModal();
+    loadPagesList();
+  });
+};
+
+// ===== PRODUCTOS =====
+function renderProducts() {
+  const list = document.getElementById('productList');
+  if (PRODUCTS.length === 0) { list.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:20px;">No hay productos en el CRM.</p>'; return; }
+  list.innerHTML = PRODUCTS.map(p => `
+    <div class="product-item">
+      <input type="checkbox" ${SELECTED.has(p.id) ? 'checked' : ''} onchange="toggleSel('${p.id}', this.checked)">
+      ${p.image_url ? `<img src="${p.image_url}">` : '<div style="width:40px;height:40px;background:var(--border);border-radius:6px;"></div>'}
+      <div class="name">${esc(p.name)} ${AI_RESULTS[p.id] ? '<span class="badge" style="background:#4c1d95;color:#e9d5ff;">✨ IA</span>' : ''}</div>
+      <div class="meta">
+        ${p.sku ? `<span class="badge">${esc(p.sku)}</span>` : ''}
+        ${p.price != null ? `<span class="badge">${p.price} €</span>` : ''}
+        ${p.category ? `<span class="badge">${esc(p.category)}</span>` : ''}
+      </div>
+      <button class="btn btn-ai mini-btn" onclick="aiForProduct('${p.id}')">✨</button>
+      <button class="btn mini-btn" onclick="openProductModal('${p.id}')">✏️</button>
+    </div>
+  `).join('');
+  updateCount();
+}
+window.toggleSel = function(id, on) { if (on) SELECTED.add(id); else SELECTED.delete(id); updateCount(); };
+window.markAll = function(on) { if (on) PRODUCTS.forEach(p => SELECTED.add(p.id)); else SELECTED.clear(); renderProducts(); };
+function updateCount() { document.getElementById('selCount').textContent = SELECTED.size + ' seleccionados'; }
+async function loadProducts() {
+  const { data, error } = await supabase.from('products').select('*').eq('active', true).order('name');
+  if (error) {
+    document.getElementById('conn-status').textContent = '❌ Sin conexión con el CRM';
+    document.getElementById('productList').innerHTML = '<p style="color:#ef4444;padding:20px;">❌ ' + error.message + '</p>';
+    return;
+  }
+  PRODUCTS = data || [];
+  document.getElementById('conn-status').textContent = '✅ CRM conectado: ' + PRODUCTS.length + ' productos';
+  renderProducts();
+}
+window.openProductModal = function(id) {
+  const p = PRODUCTS.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('pm-id').value = p.id;
+  document.getElementById('pm-name').value = p.name || '';
+  document.getElementById('pm-sku').value = p.sku || '';
+  document.getElementById('pm-price').value = p.price != null ? p.price : '';
+  document.getElementById('pm-cost').value = p.cost != null ? p.cost : '';
+  document.getElementById('pm-stock').value = p.stock != null ? p.stock : '';
+  document.getElementById('pm-category').value = p.category || '';
+  document.getElementById('pm-description').value = p.description || '';
+  document.getElementById('pm-image').value = p.image_url || '';
+  document.getElementById('product-modal').style.display = 'flex';
+};
+window.closeProductModal = function() { document.getElementById('product-modal').style.display = 'none'; };
+window.saveProduct = function(btn) {
+  withLoading(btn, async () => {
+    const id = document.getElementById('pm-id').value;
+    const row = {
+      name: document.getElementById('pm-name').value.trim(),
+      sku: document.getElementById('pm-sku').value.trim(),
+      price: parseFloat(document.getElementById('pm-price').value) || 0,
+      cost: parseFloat(document.getElementById('pm-cost').value) || 0,
+      stock: parseInt(document.getElementById('pm-stock').value) || 0,
+      category: document.getElementById('pm-category').value.trim(),
+      description: document.getElementById('pm-description').value,
+      image_url: document.getElementById('pm-image').value.trim() || null
+    };
+    const { error } = await supabase.from('products').update(row).eq('id', id);
+    if (error) { alert('❌ ' + error.message); return; }
+    showToast('💾 Producto guardado');
+    closeProductModal();
+    await loadProducts();
+  });
+};
+
+// ===== GENERAR PÁGINAS DE PRODUCTOS =====
 function finalTextsFor(p) {
   const ai = AI_RESULTS[p.id] ? AI_RESULTS[p.id].data : null;
   return {
@@ -356,9 +529,49 @@ function finalTextsFor(p) {
     image: fill(document.getElementById('tplImage').value, p) || p.image_url || ''
   };
 }
-function slugFor(p) {
-  return slugify(fill(document.getElementById('tplSlug').value, p) || p.name + '-' + (p.sku || p.id.slice(0, 8)));
-}
+function slugFor(p) { return slugify(fill(document.getElementById('tplSlug').value, p) || p.name + '-' + (p.sku || p.id.slice(0, 8))); }
+window.generatePages = function(btn) {
+  withLoading(btn, async () => {
+    if (SELECTED.size === 0) { alert('Selecciona al menos un producto.'); return; }
+    document.getElementById('status').textContent = '';
+    const toGen = PRODUCTS.filter(p => SELECTED.has(p.id));
+    log('🚀 Generando ' + toGen.length + ' página(s)...');
+    let ok = 0, ko = 0;
+    for (const p of toGen) {
+      const ai = AI_RESULTS[p.id] ? AI_RESULTS[p.id].data : null;
+      const t = finalTextsFor(p);
+      const imageUrl = t.image;
+      const features = (ai && ai.features && Array.isArray(ai.features)) ? ai.features : [];
+      const ctaText = (ai && ai.cta_text) || 'Comprar ahora';
+      const ctaUrl = (ai && ai.cta_url) || '#comprar';
+      const blocks = [];
+      blocks.push({ id: 'blk-hero-' + p.id.slice(0,8), type: 'hero', data: { title: t.heroTitle, subtitle: t.heroSub, cta_text: ctaText, cta_url: ctaUrl } });
+      if (imageUrl) blocks.push({ id: 'blk-img-' + p.id.slice(0,8), type: 'image', data: { url: imageUrl, alt: p.name, caption: p.name } });
+      if (t.text) blocks.push({ id: 'blk-txt-' + p.id.slice(0,8), type: 'text', data: { content: t.text } });
+      if (features.length) blocks.push({ id: 'blk-feat-' + p.id.slice(0,8), type: 'features', data: { title: 'Características de ' + p.name, items: features } });
+      blocks.push({ id: 'blk-cta-' + p.id.slice(0,8), type: 'hero', data: { title: '¿Listo para ' + p.name + '?', subtitle: ctaText, cta_text: ctaText, cta_url: ctaUrl } });
+      const row = { title: t.title, slug: slugFor(p), status: 'draft', content: { blocks: blocks }, featured_image: imageUrl || null };
+      try {
+        const { error } = await supabase.from('pages').upsert([row], { onConflict: 'slug' });
+        if (error) { log('❌ ' + t.title + ': ' + error.message); ko++; }
+        else { log('✅ ' + t.title + '  →  /' + row.slug); ok++; }
+      } catch (e) { log('❌ ' + t.title + ': ' + e.message); ko++; }
+    }
+    log('\n🎉 Terminado: ' + ok + ' creadas/actualizadas · ' + ko + ' errores');
+    loadPagesList();
+  });
+};
+window.previewOne = async function() {
+  if (SELECTED.size === 0) { alert('Selecciona al menos un producto.'); return; }
+  const p = PRODUCTS.find(x => x.id === [...SELECTED][0]);
+  if (!p) return;
+  const t = finalTextsFor(p);
+  const w = window.open('', '_blank');
+  w.document.write(`<html><head><title>${esc(t.title)}</title><style>body{font-family:system-ui;max-width:800px;margin:40px auto;padding:20px;color:#111}.hero{background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;padding:60px 20px;border-radius:16px;text-align:center;margin-bottom:30px}.hero h1{font-size:32px;margin-bottom:10px}img{max-width:100%;border-radius:12px;margin:20px 0}</style></head><body><div class="hero"><h1>${esc(t.heroTitle)}</h1><p>${esc(t.heroSub)}</p></div>${t.image ? `<img src="${esc(t.image)}">` : ''}<div>${esc(t.text).replace(/\n/g,'<br>')}</div></body></html>`);
+  w.document.close();
+};
+
+// ===== HERRAMIENTAS =====
 window.analyzeSEO = function() {
   const list = PRODUCTS.filter(p => SELECTED.has(p.id));
   if (list.length === 0) { alert('Selecciona al menos un producto.'); return; }
@@ -367,15 +580,39 @@ window.analyzeSEO = function() {
   list.forEach(p => {
     const t = finalTextsFor(p);
     const pre = p.name + ': ';
-    if (!t.title || t.title.length < 10) { lines.push('❌ ' + pre + 'Title vacío o muy corto (' + (t.title || '').length + ' car.)'); crit++; }
-    else if (t.title.length > 60) { lines.push('⚠️ ' + pre + 'Title largo (' + t.title.length + ' car., máx 60)'); warn++; }
-    if (!t.heroTitle || t.heroTitle.length > 70) { lines.push('⚠️ ' + pre + 'H1 vacío o largo (' + (t.heroTitle || '').length + ' car.)'); warn++; }
-    if (!t.text || t.text.length < 100) { lines.push('⚠️ ' + pre + 'Descripción corta (' + (t.text || '').length + ' car., mín 100)'); warn++; }
+    if (!t.title || t.title.length < 10) { lines.push('❌ ' + pre + 'Title vacío/corto'); crit++; }
+    else if (t.title.length > 60) { lines.push('⚠️ ' + pre + 'Title largo (' + t.title.length + ')'); warn++; }
+    if (!t.heroTitle || t.heroTitle.length > 70) { lines.push('⚠️ ' + pre + 'H1 vacío/largo'); warn++; }
+    if (!t.text || t.text.length < 100) { lines.push('⚠️ ' + pre + 'Descripción corta'); warn++; }
     if (!t.image) { lines.push('ℹ️ ' + pre + 'Sin imagen'); info++; }
   });
-  const report = '📊 ANÁLISIS SEO — ' + list.length + ' páginas\n' + (lines.length ? lines.join('\n') : '✅ Sin problemas detectados') + '\n\nResumen: ' + crit + ' críticos · ' + warn + ' avisos · ' + info + ' info';
-  alert(report);
+  alert('📊 ANÁLISIS SEO — ' + list.length + ' páginas\n' + (lines.length ? lines.join('\n') : '✅ Sin problemas') + '\n\nResumen: ' + crit + ' críticos · ' + warn + ' avisos · ' + info + ' info');
   log('📊 SEO: ' + crit + ' críticos, ' + warn + ' avisos, ' + info + ' info');
+};
+function pageHTML(p) {
+  const t = finalTextsFor(p);
+  return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${esc(t.title)}</title><meta name="description" content="${esc((t.text || '').substring(0,155))}"><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:system-ui;color:#111827;line-height:1.6}.hero{background:linear-gradient(135deg,#2563eb,#7c3aed);color:#fff;padding:70px 20px;text-align:center}.hero h1{font-size:38px;margin-bottom:12px}.hero p{font-size:18px;opacity:.92}main{max-width:900px;margin:0 auto;padding:40px 20px}main img{width:100%;border-radius:14px;margin:10px 0 24px}footer{border-top:1px solid #e5e7eb;padding:20px;text-align:center;color:#6b7280;font-size:13px}</style></head><body><section class="hero"><h1>${esc(t.heroTitle)}</h1><p>${esc(t.heroSub)}</p></section><main>${t.image ? `<img src="${esc(t.image)}" alt="${esc(p.name)}">` : ''}<div>${esc(t.text).replace(/\n/g,'<br>')}</div></main><footer>© ${new Date().getFullYear()} — ${esc(t.title)}</footer></body></html>`;
+}
+window.genZip = function(btn) {
+  withLoading(btn, async () => {
+    if (typeof JSZip === 'undefined') { alert('❌ JSZip no cargado.'); return; }
+    const list = PRODUCTS.filter(p => SELECTED.has(p.id));
+    if (list.length === 0) { alert('Selecciona al menos un producto.'); return; }
+    log('📦 Generando ZIP con ' + list.length + ' página(s)...');
+    const zip = new JSZip();
+    list.forEach(p => zip.file(slugFor(p) + '.html', pageHTML(p)));
+    const d = new Date().toISOString().slice(0, 10);
+    let x = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+    list.forEach(p => { x += '<url><loc>./' + slugFor(p) + '.html</loc><lastmod>' + d + '</lastmod></url>\n'; });
+    x += '</urlset>';
+    zip.file('sitemap.xml', x);
+    const blob = await zip.generateAsync({ type: 'blob' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'paginas-' + d + '.zip';
+    a.click();
+    log('✅ ZIP descargado');
+  });
 };
 window.dlSitemap = function() {
   const list = PRODUCTS.filter(p => SELECTED.has(p.id));
@@ -383,33 +620,18 @@ window.dlSitemap = function() {
   const base = location.origin + location.pathname.replace('generador.html', '');
   const d = new Date().toISOString().slice(0, 10);
   let x = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
-  list.forEach(p => { x += '<url><loc>' + base + 'pagina.html?slug=' + slugFor(p) + '</loc><lastmod>' + d + '</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>\n'; });
+  list.forEach(p => { x += '<url><loc>' + base + 'pagina.html?slug=' + slugFor(p) + '</loc><lastmod>' + d + '</lastmod></url>\n'; });
   x += '</urlset>';
-  const b = new Blob([x], { type: 'application/xml' });
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(b);
+  a.href = URL.createObjectURL(new Blob([x], { type: 'application/xml' }));
   a.download = 'sitemap.xml';
   a.click();
-  log('🗺️ sitemap.xml descargado con ' + list.length + ' URLs');
+  log('🗺️ sitemap.xml descargado');
 };
 window.exportBackup = function() {
-  const backup = {
-    exported_at: new Date().toISOString(),
-    selected: [...SELECTED],
-    ai_results: AI_RESULTS,
-    templates: {
-      title: document.getElementById('tplTitle').value,
-      slug: document.getElementById('tplSlug').value,
-      heroTitle: document.getElementById('tplHeroTitle').value,
-      heroSub: document.getElementById('tplHeroSub').value,
-      text: document.getElementById('tplText').value,
-      image: document.getElementById('tplImage').value
-    },
-    prompt: AI_CUSTOM_PROMPT
-  };
-  const b = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+  const backup = { exported_at: new Date().toISOString(), selected: [...SELECTED], ai_results: AI_RESULTS, templates: { title: document.getElementById('tplTitle').value, slug: document.getElementById('tplSlug').value, heroTitle: document.getElementById('tplHeroTitle').value, heroSub: document.getElementById('tplHeroSub').value, text: document.getElementById('tplText').value, image: document.getElementById('tplImage').value }, prompt: AI_CUSTOM_PROMPT };
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(b);
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' }));
   a.download = 'generador-backup-' + new Date().toISOString().slice(0, 10) + '.json';
   a.click();
   log('💾 Backup exportado');
@@ -430,11 +652,7 @@ window.importBackup = function(f) {
         document.getElementById('tplText').value = o.templates.text || '';
         document.getElementById('tplImage').value = o.templates.image || '';
       }
-      if (o.prompt != null) {
-        AI_CUSTOM_PROMPT = o.prompt;
-        localStorage.setItem('gen_ai_prompt', o.prompt);
-        document.getElementById('aiPrompt').value = o.prompt;
-      }
+      if (o.prompt != null) { AI_CUSTOM_PROMPT = o.prompt; localStorage.setItem('gen_ai_prompt', o.prompt); document.getElementById('aiPrompt').value = o.prompt; }
       renderProducts();
       log('📂 Backup importado: ' + SELECTED.size + ' seleccionados');
     } catch (e) { alert('JSON inválido.'); }
@@ -442,257 +660,101 @@ window.importBackup = function(f) {
   r.readAsText(f);
 };
 
-// ===== ZIP =====
-function pageHTML(p) {
-  const t = finalTextsFor(p);
-  const esc = (s) => (s == null ? '' : String(s)).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  return `<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${esc(t.title)}</title>
-<meta name="description" content="${esc((t.text || '').substring(0, 155))}">
-<meta property="og:title" content="${esc(t.title)}">
-<meta property="og:description" content="${esc(t.heroSub)}">
-${t.image ? `<meta property="og:image" content="${esc(t.image)}">` : ''}
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#111827;line-height:1.6;background:#fff}
-.hero{background:linear-gradient(135deg,#2563eb,#7c3aed);color:#fff;padding:70px 20px;text-align:center}
-.hero h1{font-size:38px;margin-bottom:12px}
-.hero p{font-size:18px;opacity:.92;max-width:640px;margin:0 auto 22px}
-.hero a{display:inline-block;background:#fff;color:#2563eb;padding:12px 26px;border-radius:10px;font-weight:700;text-decoration:none}
-main{max-width:900px;margin:0 auto;padding:40px 20px}
-main img{width:100%;border-radius:14px;margin:10px 0 24px}
-footer{border-top:1px solid #e5e7eb;padding:20px;text-align:center;color:#6b7280;font-size:13px}
-</style>
-</head>
-<body>
-<section class="hero">
-  <h1>${esc(t.heroTitle)}</h1>
-  <p>${esc(t.heroSub)}</p>
-  <a href="#contenido">Ver detalles</a>
-</section>
-<main id="contenido">
-  ${t.image ? `<img src="${esc(t.image)}" alt="${esc(p.name)}" loading="lazy">` : ''}
-  <div>${esc(t.text).replace(/\n/g, '<br>')}</div>
-</main>
-<footer>© ${new Date().getFullYear()} — ${esc(t.title)}</footer>
-</body>
-</html>`;
-}
-window.genZip = async function() {
-  if (typeof JSZip === 'undefined') { alert('❌ JSZip no está cargado. Revisa la conexión a internet.'); return; }
-  const list = PRODUCTS.filter(p => SELECTED.has(p.id));
-  if (list.length === 0) { alert('Selecciona al menos un producto.'); return; }
-  log('📦 Generando ZIP con ' + list.length + ' página(s)...');
-  const zip = new JSZip();
-  list.forEach(p => { zip.file(slugFor(p) + '.html', pageHTML(p)); });
-  const d = new Date().toISOString().slice(0, 10);
-  let x = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
-  list.forEach(p => { x += '<url><loc>./' + slugFor(p) + '.html</loc><lastmod>' + d + '</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>\n'; });
-  x += '</urlset>';
-  zip.file('sitemap.xml', x);
-  const blob = await zip.generateAsync({ type: 'blob' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'paginas-' + d + '.zip';
-  a.click();
-  log('✅ ZIP descargado: ' + list.length + ' páginas + sitemap.xml');
-};
-
-// ===== GENERAR Y VISTA PREVIA =====
-window.previewOne = async function() {
-  if (SELECTED.size === 0) { alert('Selecciona al menos un producto.'); return; }
-  const firstId = [...SELECTED][0];
-  const p = PRODUCTS.find(x => x.id === firstId);
-  if (!p) return;
-  const t = finalTextsFor(p);
-  const w = window.open('', '_blank');
-  w.document.write(`
-    <html><head><title>${t.title}</title>
-    <style>body{font-family:system-ui;max-width:800px;margin:40px auto;padding:20px;color:#111}
-    .hero{background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;padding:60px 20px;border-radius:16px;text-align:center;margin-bottom:30px}
-    .hero h1{font-size:32px;margin-bottom:10px}
-    img{max-width:100%;border-radius:12px;margin:20px 0}
-    </style></head><body>
-    <div class="hero">
-      <h1>${t.heroTitle}</h1>
-      <p>${t.heroSub}</p>
-    </div>
-    ${t.image ? `<img src="${t.image}">` : ''}
-    <div>${(t.text || '').replace(/\n/g, '<br>')}</div>
-    </body></html>
-  `);
-  w.document.close();
-};
-window.generatePages = async function() {
-  if (SELECTED.size === 0) { alert('Selecciona al menos un producto.'); return; }
-  document.getElementById('status').textContent = '';
-  const toGen = PRODUCTS.filter(p => SELECTED.has(p.id));
-  log('🚀 Generando ' + toGen.length + ' página(s)...');
-  let ok = 0, ko = 0;
-  for (const p of toGen) {
-    const ai = AI_RESULTS[p.id] ? AI_RESULTS[p.id].data : null;
-    const title = (ai && ai.title) || fill(document.getElementById('tplTitle').value, p) || p.name;
-    const slug = slugFor(p);
-    const heroTitle = (ai && ai.hero_title) || fill(document.getElementById('tplHeroTitle').value, p) || p.name;
-    const heroSub = (ai && ai.hero_sub) || fill(document.getElementById('tplHeroSub').value, p);
-    const text = (ai && ai.text) || fill(document.getElementById('tplText').value, p) || p.description || '';
-    const imageUrl = fill(document.getElementById('tplImage').value, p) || p.image_url || '';
-    const features = (ai && ai.features && Array.isArray(ai.features)) ? ai.features : [];
-    const ctaText = (ai && ai.cta_text) || 'Comprar ahora';
-    const ctaUrl = (ai && ai.cta_url) || '#comprar';
-    const blocks = [];
-    blocks.push({ id: 'blk-hero-' + p.id.slice(0,8), type: 'hero', data: { title: heroTitle, subtitle: heroSub, cta_text: ctaText, cta_url: ctaUrl } });
-    if (imageUrl) blocks.push({ id: 'blk-img-' + p.id.slice(0,8), type: 'image', data: { url: imageUrl, alt: p.name, caption: p.name } });
-    if (text) blocks.push({ id: 'blk-txt-' + p.id.slice(0,8), type: 'text', data: { content: text } });
-    if (features.length > 0) blocks.push({ id: 'blk-feat-' + p.id.slice(0,8), type: 'features', data: { title: 'Características de ' + p.name, items: features } });
-    blocks.push({ id: 'blk-cta-' + p.id.slice(0,8), type: 'hero', data: { title: '¿Listo para ' + p.name + '?', subtitle: ctaText, cta_text: ctaText, cta_url: ctaUrl } });
-    const row = { title: title, slug: slug, status: 'draft', content: { blocks: blocks }, featured_image: imageUrl || null };
-    try {
-      const { error } = await supabase.from('pages').upsert([row], { onConflict: 'slug' });
-      if (error) { log('❌ ' + title + ': ' + error.message); ko++; }
-      else { log('✅ ' + title + '  →  /' + slug); ok++; }
-    } catch (e) { log('❌ ' + title + ': ' + e.message); ko++; }
-  }
-  log('\n🎉 Terminado: ' + ok + ' creadas/actualizadas · ' + ko + ' errores');
-};
-
 // ===== BIBLIOTECA =====
 async function loadLibImages() {
   const { data, error } = await supabase.storage.from('product-images').list('', { limit: 200 });
-  if (error) { console.error('Error cargando biblioteca:', error); return; }
+  if (error) { console.error(error); return; }
   LIB_IMAGES = data || [];
-  const count = document.getElementById('lib-count');
-  if (count) count.textContent = LIB_IMAGES.length + ' imágenes';
+  document.getElementById('lib-count').textContent = LIB_IMAGES.length + ' imágenes';
 }
-function getLibUrl(name) {
-  const { data } = supabase.storage.from('product-images').getPublicUrl(name);
-  return data.publicUrl;
-}
+function getLibUrl(name) { return supabase.storage.from('product-images').getPublicUrl(name).data.publicUrl; }
 window.openLib = async function() {
   document.getElementById('lib-modal').style.display = 'flex';
-  await loadLibImages();
-  renderLib();
   const cats = [...new Set(PRODUCTS.map(p => p.category).filter(Boolean))];
   const sel = document.getElementById('lib-cat');
-  sel.innerHTML = '<option value="general">📁 General</option>' + cats.map(c => `<option value="${c.toLowerCase().replace(/[^a-z0-9]/g,'-')}">${c}</option>`).join('');
+  sel.innerHTML = '<option value="general">📁 General</option><option value="productos">📦 Productos</option><option value="servicios">🛠️ Servicios</option><option value="paginas">📄 Páginas</option>' + cats.map(c => `<option value="${slugify(c)}">${esc(c)}</option>`).join('');
+  await loadLibImages();
+  renderLib();
 };
-window.closeLib = function() {
-  document.getElementById('lib-modal').style.display = 'none';
-};
+window.closeLib = function() { document.getElementById('lib-modal').style.display = 'none'; };
 function renderLib() {
   const grid = document.getElementById('lib-grid');
-  if (LIB_IMAGES.length === 0) {
-    grid.innerHTML = '<p style="color:var(--text-muted);grid-column:1/-1;text-align:center;padding:40px;">Biblioteca vacía. Sube o genera imágenes.</p>';
-    return;
-  }
+  if (LIB_IMAGES.length === 0) { grid.innerHTML = '<p style="color:var(--text-muted);grid-column:1/-1;text-align:center;padding:40px;">Biblioteca vacía.</p>'; return; }
   grid.innerHTML = LIB_IMAGES.map(img => {
     const url = getLibUrl(img.name);
-    return `
-      <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--bg-input);">
-        <img src="${url}" loading="lazy" style="width:100%;height:140px;object-fit:cover;">
-        <div style="padding:8px;font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${img.name}</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:8px;border-top:1px solid var(--border);">
-          <button class="btn" onclick="libUse('${url}')" style="font-size:12px;padding:6px;">⬇️ Usar</button>
-          <button class="btn btn-alt" onclick="libCopy('${url}')" style="font-size:12px;padding:6px;">📋 Copiar</button>
-          <button class="btn btn-alt" onclick="window.open('${url}','_blank')" style="font-size:12px;padding:6px;">🔗 Abrir</button>
-          <button class="btn btn-alt" onclick="libDel('${img.name}')" style="font-size:12px;padding:6px;color:#ef4444;">🗑 Eliminar</button>
-        </div>
-      </div>
-    `;
+    return `<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--bg-input);">
+      <img src="${url}" loading="lazy" style="width:100%;height:140px;object-fit:cover;">
+      <div style="padding:8px;font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(img.name)}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:8px;border-top:1px solid var(--border);">
+        <button class="btn mini-btn" onclick="libUse('${url}')">⬇️ Usar</button>
+        <button class="btn btn-alt mini-btn" onclick="libCopy('${url}')">📋 Copiar</button>
+        <button class="btn btn-alt mini-btn" onclick="window.open('${url}','_blank')">🔗 Abrir</button>
+        <button class="btn btn-alt mini-btn" style="color:#ef4444;" onclick="libDel('${img.name}')">🗑 Eliminar</button>
+      </div></div>`;
   }).join('');
 }
-window.libGen = async function(btn) {
-  const prompt = document.getElementById('lib-prompt').value.trim();
-  const model = document.getElementById('lib-model').value;
-  if (!prompt) { alert('Escribe un prompt'); return; }
-  btn.disabled = true;
-  btn.textContent = '⏳ Generando...';
-  try {
-    const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?model=${model}&width=1024&height=640&nologo=true`;
-    const res = await fetch(url);
+window.libGen = function(btn) {
+  withLoading(btn, async () => {
+    const prompt = document.getElementById('lib-prompt').value.trim();
+    if (!prompt) { alert('Escribe un prompt'); return; }
+    const model = document.getElementById('lib-model').value;
+    const res = await fetch('https://image.pollinations.ai/prompt/' + encodeURIComponent(prompt) + '?model=' + model + '&width=1024&height=640&nologo=true');
     const blob = await res.blob();
     const cat = document.getElementById('lib-cat').value;
-    const name = `${cat}/ia-${Date.now()}.jpg`;
+    const name = cat + '/ia-' + Date.now() + '.jpg';
     const { error } = await supabase.storage.from('product-images').upload(name, blob, { contentType: 'image/jpeg' });
-    if (error) throw error;
-    await loadLibImages();
-    renderLib();
+    if (error) throw new Error(error.message);
+    await loadLibImages(); renderLib();
     document.getElementById('lib-prompt').value = '';
-    showToast('✅ Imagen generada y guardada');
-  } catch (e) {
-    alert('Error: ' + e.message);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = '🎨 Generar';
-  }
+    showToast('✅ Imagen generada en ' + cat);
+  });
 };
 document.getElementById('lib-upload')?.addEventListener('change', async (e) => {
   const files = Array.from(e.target.files);
-  if (files.length === 0) return;
+  if (!files.length) return;
   const cat = document.getElementById('lib-cat').value;
   for (const file of files) {
-    const name = `${cat}/${Date.now()}-${file.name.replace(/[^a-z0-9.]/gi,'_')}`;
-    await supabase.storage.from('product-images').upload(name, file);
+    await supabase.storage.from('product-images').upload(cat + '/' + Date.now() + '-' + file.name.replace(/[^a-z0-9.]/gi, '_'), file);
   }
-  await loadLibImages();
-  renderLib();
+  await loadLibImages(); renderLib();
   e.target.value = '';
   showToast('✅ ' + files.length + ' imagen(es) subida(s)');
 });
-window.libUse = function(url) {
-  const imageInput = document.getElementById('tplImage');
-  if (imageInput) {
-    imageInput.value = url;
-    closeLib();
-    showToast('✅ Imagen asignada al campo "Bloque Imagen — URL"');
-  }
-};
-window.libCopy = function(url) {
-  navigator.clipboard.writeText(url);
-  showToast('📋 URL copiada');
-};
+window.libUse = function(url) { document.getElementById('tplImage').value = url; closeLib(); showToast('✅ Imagen asignada a la plantilla'); };
+window.libCopy = function(url) { navigator.clipboard.writeText(url); showToast('📋 URL copiada'); };
 window.libDel = async function(name) {
   if (!confirm('¿Eliminar esta imagen?')) return;
   await supabase.storage.from('product-images').remove([name]);
-  await loadLibImages();
-  renderLib();
+  await loadLibImages(); renderLib();
 };
-document.getElementById('lib-modal')?.addEventListener('click', (e) => {
-  if (e.target.id === 'lib-modal') closeLib();
-});
+document.getElementById('lib-modal')?.addEventListener('click', (e) => { if (e.target.id === 'lib-modal') closeLib(); });
+document.getElementById('product-modal')?.addEventListener('click', (e) => { if (e.target.id === 'product-modal') closeProductModal(); });
+document.getElementById('page-modal')?.addEventListener('click', (e) => { if (e.target.id === 'page-modal') closePageModal(); });
 
-// ===== SECCIONES PLEGABLES =====
+// ===== PLEGABLES + TEMA + INIT =====
 document.querySelectorAll('.card > h2').forEach(h => {
   const card = h.parentElement;
   const tog = document.createElement('span');
   tog.className = 'tog';
-  tog.textContent = '▼';
+  const startCollapsed = card.dataset.collapsed === '1';
+  tog.textContent = startCollapsed ? '▶' : '▼';
+  if (startCollapsed) card.classList.add('collapsed');
   h.appendChild(tog);
   h.addEventListener('click', () => {
     const collapsed = card.classList.toggle('collapsed');
     tog.textContent = collapsed ? '▶' : '▼';
   });
 });
-
-// ===== MODO OSCURO / CLARO =====
 const themeBtn = document.getElementById('theme-toggle');
-const savedTheme = localStorage.getItem('gen_theme');
-if (savedTheme === 'light') {
-  document.body.classList.add('light');
-  themeBtn.textContent = '☀️';
-}
+if (localStorage.getItem('gen_theme') === 'light') { document.body.classList.add('light'); themeBtn.textContent = '☀️'; }
 themeBtn.addEventListener('click', () => {
   const isLight = document.body.classList.toggle('light');
   themeBtn.textContent = isLight ? '☀️' : '🌙';
   localStorage.setItem('gen_theme', isLight ? 'light' : 'dark');
 });
-
 renderVars();
 loadProducts();
+loadPagesList();
 </script>
 </body>
 </html>
