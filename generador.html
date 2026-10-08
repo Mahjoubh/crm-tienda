@@ -335,9 +335,11 @@ window.generatePages = async function() {
     const ctaUrl = (ai && ai.cta_url) || '#comprar';
 
     const blocks = [];
-    blocks.push({ id: 'blk-hero-' + p.id.slice(0,8), type: 'hero', data: { title: heroTitle, subtitle: heroSub, cta_text: 'Comprar ahora', cta_url: '#producto' } });
-    if (imageUrl) blocks.push({ id: 'blk-img-' + p.id.slice(0,8), type: 'image', data: { url: imageUrl, alt: p.name, caption: '' } });
+    blocks.push({ id: 'blk-hero-' + p.id.slice(0,8), type: 'hero', data: { title: heroTitle, subtitle: heroSub, cta_text: ctaText, cta_url: ctaUrl } });
+    if (imageUrl) blocks.push({ id: 'blk-img-' + p.id.slice(0,8), type: 'image', data: { url: imageUrl, alt: p.name, caption: p.name } });
     if (text) blocks.push({ id: 'blk-txt-' + p.id.slice(0,8), type: 'text', data: { content: text } });
+    if (features.length > 0) blocks.push({ id: 'blk-feat-' + p.id.slice(0,8), type: 'features', data: { title: 'Características de ' + p.name, items: features } });
+    blocks.push({ id: 'blk-cta-' + p.id.slice(0,8), type: 'hero', data: { title: '¿Listo para ' + p.name + '?', subtitle: ctaText, cta_text: ctaText, cta_url: ctaUrl } });
 
     const row = {
       title: title,
