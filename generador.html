@@ -330,7 +330,9 @@ window.generatePages = async function() {
     const heroTitle = (ai && ai.hero_title) || fill(document.getElementById('tplHeroTitle').value, p) || p.name;
     const heroSub = (ai && ai.hero_sub) || fill(document.getElementById('tplHeroSub').value, p);
     const text = (ai && ai.text) || fill(document.getElementById('tplText').value, p) || p.description || '';
-    const imageUrl = fill(document.getElementById('tplImage').value, p) || p.image_url || '';
+    const features = (ai && ai.features && Array.isArray(ai.features)) ? ai.features : [];
+    const ctaText = (ai && ai.cta_text) || 'Comprar ahora';
+    const ctaUrl = (ai && ai.cta_url) || '#comprar';
 
     const blocks = [];
     blocks.push({ id: 'blk-hero-' + p.id.slice(0,8), type: 'hero', data: { title: heroTitle, subtitle: heroSub, cta_text: 'Comprar ahora', cta_url: '#producto' } });
