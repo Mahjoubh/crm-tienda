@@ -452,7 +452,7 @@ const AI_RESULTS = {};
 
 function aiPromptFor(p) {
   const extra = AI_CUSTOM_PROMPT ? '\nInstrucciones extra: ' + AI_CUSTOM_PROMPT : '';
-  return 'Eres un experto en marketing y SEO para tiendas online. Producto: "' + (p.name || '') + '". Categoría: ' + (p.category || 'general') + '. Precio: ' + (p.price != null ? p.price : '—') + ' €. Descripción base: ' + (p.description || 'sin descripción') + '.' + extra + '\nDevuelve ÚNICAMENTE este JSON válido: {"title": "título SEO de la página (máx 60 caracteres)", "hero_title": "titular atractivo (máx 70)", "hero_sub": "subtítulo persuasivo (máx 90)", "text": "descripción comercial de 60-90 palabras en español, sin markdown"}';
+  return 'Eres un experto en marketing y SEO para tiendas online. Producto: "' + (p.name || '') + '". Categoría: ' + (p.category || 'general') + '. Precio: ' + (p.price != null ? p.price : '—') + ' €. Descripción base: ' + (p.description || 'sin descripción') + '.' + extra + '\nDevuelve ÚNICAMENTE este JSON válido (sin markdown, sin texto extra):\n{"title":"título SEO máx 60 car.","hero_title":"titular atractivo máx 70","hero_sub":"subtítulo persuasivo máx 90","text":"descripción comercial 60-90 palabras","features":[{"title":"Característica 1","description":"detalle corto"},{"title":"Característica 2","description":"detalle corto"},{"title":"Característica 3","description":"detalle corto"}],"cta_text":"texto del botón (ej: Comprar ahora)","cta_url":"#comprar"}';
 }
 
 window.aiForProduct = async function (id) {
