@@ -667,6 +667,128 @@ document.querySelectorAll('.card > h2').forEach(h => {
 });
 
 renderVars();
+  // ===== BIBLIOTECA DE IMÁGENES =====
+let LIB_IMAGES = [];
+
+async function loadLibImages() {
+  const { data, error } = await supabase.storage.from('product-images').list('', { limit: 200 });
+  if (error) {
+    console.error('Error cargando biblioteca:', error);
+    return;
+  }
+  LIB_IMAGES = data || [];
+  const count = document.getElementById('lib-count');
+  if (count) count.textContent = LIB_IMAGES.length + ' imágenes';
+}
+
+function getLibUrl(name) {
+  const { data } = supabase.storage.from('product-images').getPublicUrl(name);
+  return data.publicUrl;
+}
+
+window.openLib = async function() {
+  document.getElementById('lib-modal').style.display = 'flex';
+  await loadLibImages();
+  renderLib();
+  // Cargar categorías desde productos
+  const cats = [...new Set(PRODUCTS.map(p => p.category).filter(Boolean))];
+  const sel = document.getElementById('lib-cat');
+  sel.innerHTML = '<option value="general">📁 General</option>' + 
+    cats.map(c => `<option value="${c.toLowerCase().replace(/[^a-z0-9]/g,'-')}">${c}</option>`).join('');
+};
+
+window.closeLib = function() {
+  document.getElementById('lib-modal').style.display = 'none';
+};
+
+function renderLib() {
+  const grid = document.getElementById('lib-grid');
+  if (LIB_IMAGES.length === 0) {
+    grid.innerHTML = '<p style="color:var(--text-muted);grid-column:1/-1;text-align:center;padding:40px;">Biblioteca vacía. Sube o genera imágenes.</p>';
+    return;
+  }
+  grid.innerHTML = LIB_IMAGES.map(img => {
+    const url = getLibUrl(img.name);
+    return `
+      <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--bg-input);">
+        <img src="${url}" loading="lazy" style="width:100%;height:140px;object-fit:cover;">
+        <div style="padding:8px;font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${img.name}</div>
+        <div style="display:flex;gap:6px;padding:8px;border-top:1px solid var(--border);">
+          <button class="btn btn-alt" onclick="libUse('${url}')" style="flex:1;font-size:12px;padding:4px;">Usar</button>
+          <button class="btn btn-alt" onclick="libCopy('${url}')" style="font-size:12px;padding:4px;"></button>
+          <button class="btn btn-alt" onclick="libDel('${img.name}')" style="font-size:12px;padding:4px;color:#ef4444;">🗑</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+window.libGen = async function() {
+  const prompt = document.getElementById('lib-prompt').value.trim();
+  const model = document.getElementById('lib-model').value;
+  if (!prompt) { alert('Escribe un prompt'); return; }
+  const btn = event.target;
+  btn.disabled = true;
+  btn.textContent = '⏳ Generando...';
+  try {
+    const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?model=${model}&width=1024&height=640&nologo=true`;
+    // Descargar y subir a Supabase
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const cat = document.getElementById('lib-cat').value;
+    const name = `${cat}/ia-${Date.now()}.jpg`;
+    const { error } = await supabase.storage.from('product-images').upload(name, blob, { contentType: 'image/jpeg' });
+    if (error) throw error;
+    await loadLibImages();
+    renderLib();
+    document.getElementById('lib-prompt').value = '';
+  } catch (e) {
+    alert('Error: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🎨 Generar';
+  }
+};
+
+document.getElementById('lib-upload')?.addEventListener('change', async (e) => {
+  const files = Array.from(e.target.files);
+  if (files.length === 0) return;
+  const cat = document.getElementById('lib-cat').value;
+  for (const file of files) {
+    const name = `${cat}/${Date.now()}-${file.name.replace(/[^a-z0-9.]/gi,'_')}`;
+    await supabase.storage.from('product-images').upload(name, file);
+  }
+  await loadLibImages();
+  renderLib();
+  e.target.value = '';
+});
+
+window.libUse = function(url) {
+  // Insertar en el campo activo de plantilla
+  const imageInput = document.getElementById('tplImage');
+  if (imageInput) {
+    imageInput.value = url;
+    closeLib();
+  }
+};
+
+window.libCopy = function(url) {
+  navigator.clipboard.writeText(url);
+  showToast(' URL copiada');
+};
+
+window.libDel = async function(name) {
+  if (!confirm('¿Eliminar esta imagen?')) return;
+  await supabase.storage.from('product-images').remove([name]);
+  await loadLibImages();
+  renderLib();
+};
+
+// Cerrar modal al hacer clic fuera
+document.getElementById('lib-modal')?.addEventListener('click', (e) => {
+  if (e.target.id === 'lib-modal') closeLib();
+});
+
 loadProducts();
 </script>
 </body>
