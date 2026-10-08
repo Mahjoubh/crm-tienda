@@ -50,8 +50,7 @@ body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; ba
 .card h2::before { content: ''; width: 4px; height: 20px; background: var(--accent); border-radius: 2px; }
 .card h2 .tog { margin-left: auto; font-size: 13px; color: var(--text-muted); }
 .card.collapsed > *:not(h2) { display: none; }
-.row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-@media (max-width: 800px) { .row { grid-template-columns: 1fr; } }
+.row { display: flex; flex-direction: column; gap: 20px; }
 label { display: block; font-size: 13px; font-weight: 600; color: var(--text-label); margin-bottom: 6px; }
 input[type="text"], textarea, select {
   width: 100%; padding: 10px 12px; background: var(--bg-input); color: var(--text);
