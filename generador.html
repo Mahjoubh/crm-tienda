@@ -143,6 +143,15 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: #3b82f6
   </div>
 
   <div class="card">
+    <h2>📚 Biblioteca de imágenes</h2>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">Sube fotos o genera imágenes con IA organizadas por categoría. Asígnalas a las páginas desde el editor.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+      <button class="btn btn-alt" onclick="openLib()">📚 Abrir biblioteca</button>
+      <span id="lib-count" class="badge">0 imágenes</span>
+    </div>
+  </div>
+
+  <div class="card">
     <h2>⚡ Generar</h2>
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
       <button class="btn" onclick="generatePages()">🚀 Generar páginas y guardar en el CRM</button>
