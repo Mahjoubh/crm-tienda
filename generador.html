@@ -174,6 +174,36 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: #3b82f6
 
 </div>
 
+  <div class="modal-overlay" id="lib-modal" style="display:none;">
+  <div class="modal" style="max-width:900px;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3>📚 Biblioteca de imágenes</h3>
+      <button class="btn btn-alt" onclick="closeLib()" style="padding:6px 12px;">✕ Cerrar</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+      <div>
+        <label>Generar con IA</label>
+        <input type="text" id="lib-prompt" placeholder="Ej: producto profesional, fondo blanco, alta calidad">
+        <select id="lib-model" style="margin-top:8px;">
+          <option value="flux">FLUX (calidad)</option>
+          <option value="turbo">Turbo (rápido)</option>
+        </select>
+        <button class="btn btn-ai" onclick="libGen()" style="margin-top:8px;"> Generar</button>
+      </div>
+      <div>
+        <label>Subir imágenes</label>
+        <input type="file" id="lib-upload" accept="image/*" multiple style="margin-top:8px;">
+        <label style="margin-top:8px;">Categoría</label>
+        <select id="lib-cat">
+          <option value="general"> General</option>
+        </select>
+      </div>
+    </div>
+    <div id="lib-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;">
+      <p style="color:var(--text-muted);">Cargando...</p>
+    </div>
+  </div>
+</div>
 <script type="module">
 import { supabase } from './js/supabase-config.js';
 
