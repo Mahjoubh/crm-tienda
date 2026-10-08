@@ -20,6 +20,12 @@ body { font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; backgro
 .card h2::before { content:''; width:4px; height:20px; background:var(--accent); border-radius:2px; }
 .card h2 .tog { margin-left:auto; font-size:13px; color:var(--text-muted); }
 .card.collapsed > *:not(h2) { display:none; }
+.tabs { display:flex; gap:6px; border-bottom:1px solid var(--border); margin-bottom:14px; flex-wrap:wrap; }
+.tab-btn { background:transparent; border:none; color:var(--text-muted); padding:10px 16px; font-size:14px; font-weight:600; cursor:pointer; border-bottom:2px solid transparent; }
+.tab-btn:hover { color:var(--text); }
+.tab-btn.active { color:var(--text); border-bottom-color:var(--accent); }
+.tab-panel { display:none; }
+.tab-panel.active { display:block; }
 label { display:block; font-size:13px; font-weight:600; color:var(--text-label); margin-bottom:6px; }
 input[type="text"], input[type="number"], textarea, select { width:100%; padding:10px 12px; background:var(--bg-input); color:var(--text); border:1.5px solid var(--border); border-radius:8px; font-family:inherit; font-size:14px; margin-bottom:10px; }
 textarea { min-height:90px; resize:vertical; }
@@ -62,58 +68,65 @@ textarea { min-height:90px; resize:vertical; }
     <textarea id="aiPagePrompt" placeholder="Ej: Página de presentación para mi taller de reparación de móviles en Sevilla. Quiero destacar reparación en 24h y garantía de 6 meses."></textarea>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">
       <button class="btn btn-ai" onclick="createPageWithAI(this)">✨ Crear página con IA</button>
-      <span class="badge">La página se crea en Borrador y distinta cada vez</span>
+      <span class="badge">Se crea en Borrador y distinta cada vez</span>
     </div>
     <label>Prompt personalizado para productos (opcional)</label>
     <textarea id="aiPrompt" placeholder="Ej: Tono profesional y cercano, destaca envío gratis en 24h y garantía de 2 años."></textarea>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
       <button class="btn btn-ai" onclick="testAI()">🔌 Probar conexión IA</button>
-      <button class="btn btn-ai" onclick="aiForAllSelected(this)">✨ IA para productos seleccionados</button>
       <span id="ai-status" class="badge">Sin probar</span>
     </div>
     <p style="font-size:12px;color:var(--text-muted);margin-top:8px;">💡 Cascada: FreeLLMAPI → Pollinations → plantillas.</p>
   </div>
 
   <div class="card">
-    <h2>📄 2. Páginas</h2>
-    <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">Edita, regenera con IA, mira o elimina las páginas creadas.</p>
-    <div class="page-list" id="pageList"><p style="text-align:center;color:var(--text-muted);padding:20px;">Cargando páginas...</p></div>
+    <h2>🗂 2. Gestión de contenido</h2>
+    <div class="tabs" id="content-tabs">
+      <button class="tab-btn active" data-tab="pages" onclick="switchTab('pages')">📄 Páginas (<span id="tab-pages-count">0</span>)</button>
+      <button class="tab-btn" data-tab="products" onclick="switchTab('products')">📦 Productos (<span id="tab-products-count">0</span>)</button>
+      <button class="tab-btn" data-tab="template" onclick="switchTab('template')">✏️ Plantilla</button>
+    </div>
+
+    <div class="tab-panel active" id="tab-pages">
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">Edita, regenera con IA, mira o elimina las páginas creadas.</p>
+      <div class="page-list" id="pageList"><p style="text-align:center;color:var(--text-muted);padding:20px;">Cargando páginas...</p></div>
+    </div>
+
+    <div class="tab-panel" id="tab-products">
+      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+        <button class="btn btn-alt" onclick="markAll(true)">Seleccionar todos</button>
+        <button class="btn btn-alt" onclick="markAll(false)">Quitar todos</button>
+        <span id="selCount" class="badge">0 seleccionados</span>
+      </div>
+      <div class="product-list" id="productList"><p style="text-align:center;color:var(--text-muted);padding:20px;">Cargando productos...</p></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
+        <button class="btn btn-ai" onclick="aiForAllSelected(this)">✨ IA para seleccionados</button>
+        <button class="btn" onclick="generatePages(this)">🚀 Generar páginas de seleccionados</button>
+        <button class="btn btn-alt" onclick="previewOne()">👁 Vista previa</button>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-template">
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">Plantilla con variables para la generación masiva de productos.</p>
+      <label>Título de la página</label>
+      <input type="text" id="tplTitle" placeholder="{name} — Mi Tienda">
+      <label>Slug (URL)</label>
+      <input type="text" id="tplSlug" placeholder="producto-{sku}">
+      <label>Bloque Hero — Título</label>
+      <input type="text" id="tplHeroTitle" placeholder="{name}">
+      <label>Bloque Hero — Subtítulo</label>
+      <input type="text" id="tplHeroSub" placeholder="{price} € — {category}">
+      <label>Bloque Texto — Descripción</label>
+      <textarea id="tplText" placeholder="{description}&#10;&#10;Disponible en nuestra tienda."></textarea>
+      <label>Bloque Imagen — URL</label>
+      <input type="text" id="tplImage" placeholder="{image_url}">
+      <p style="font-size:12px;color:var(--text-muted);margin-top:6px;">💡 Haz clic en una variable para insertarla:</p>
+      <div class="vars" id="varsList"></div>
+    </div>
   </div>
 
   <div class="card">
-    <h2>📦 3. Productos</h2>
-    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
-      <button class="btn btn-alt" onclick="markAll(true)">Seleccionar todos</button>
-      <button class="btn btn-alt" onclick="markAll(false)">Quitar todos</button>
-      <span id="selCount" class="badge">0 seleccionados</span>
-    </div>
-    <div class="product-list" id="productList"><p style="text-align:center;color:var(--text-muted);padding:20px;">Cargando productos...</p></div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
-      <button class="btn" onclick="generatePages(this)">🚀 Generar páginas de seleccionados</button>
-      <button class="btn btn-ai" onclick="previewOne()">👁 Vista previa</button>
-    </div>
-  </div>
-
-  <div class="card" data-collapsed="1">
-    <h2>✏️ 4. Plantilla por página (generación masiva)</h2>
-    <label>Título de la página</label>
-    <input type="text" id="tplTitle" placeholder="{name} — Mi Tienda">
-    <label>Slug (URL)</label>
-    <input type="text" id="tplSlug" placeholder="producto-{sku}">
-    <label>Bloque Hero — Título</label>
-    <input type="text" id="tplHeroTitle" placeholder="{name}">
-    <label>Bloque Hero — Subtítulo</label>
-    <input type="text" id="tplHeroSub" placeholder="{price} € — {category}">
-    <label>Bloque Texto — Descripción</label>
-    <textarea id="tplText" placeholder="{description}&#10;&#10;Disponible en nuestra tienda."></textarea>
-    <label>Bloque Imagen — URL</label>
-    <input type="text" id="tplImage" placeholder="{image_url}">
-    <p style="font-size:12px;color:var(--text-muted);margin-top:6px;">💡 Haz clic en una variable para insertarla:</p>
-    <div class="vars" id="varsList"></div>
-  </div>
-
-  <div class="card">
-    <h2>📚 5. Biblioteca de imágenes</h2>
+    <h2>📚 3. Biblioteca de imágenes</h2>
     <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">Imágenes organizadas por categoría (producto, servicio, página...).</p>
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
       <button class="btn btn-alt" onclick="openLib()">📚 Abrir biblioteca</button>
@@ -122,7 +135,7 @@ textarea { min-height:90px; resize:vertical; }
   </div>
 
   <div class="card">
-    <h2>🧰 6. Herramientas</h2>
+    <h2>🧰 4. Herramientas</h2>
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
       <button class="btn btn-alt" onclick="analyzeSEO()">🔍 Analizar SEO</button>
       <button class="btn btn-alt" onclick="genZip(this)">📦 Generar ZIP</button>
@@ -240,6 +253,10 @@ async function withLoading(btn, fn) {
   btn.disabled = true; btn.innerHTML = '⏳ Generando...';
   try { await fn(); } finally { btn.disabled = false; btn.innerHTML = orig; }
 }
+window.switchTab = function(name) {
+  document.querySelectorAll('#content-tabs .tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
+};
 
 // ===== VARIABLES CLICABLES =====
 function renderVars() { document.getElementById('varsList').innerHTML = VARS.map(v => `<span onclick="insertVar('${v}')">${v}</span>`).join(''); }
@@ -322,14 +339,14 @@ window.aiForAllSelected = function(btn) {
   });
 };
 
-// ===== CREAR PÁGINA CON IA (prompt libre) =====
+// ===== CREAR PÁGINA CON IA =====
 window.createPageWithAI = function(btn) {
   const prompt = document.getElementById('aiPagePrompt').value.trim();
   if (!prompt) { alert('Escribe una descripción de la página.'); return; }
   withLoading(btn, async () => {
     log('✨ Creando página con IA...');
     const res = await callAI('Crea una página web profesional. Tema: ' + prompt + '\nDevuelve ÚNICAMENTE este JSON válido:\n{"title":"título de la página","hero_title":"titular atractivo","hero_sub":"subtítulo","text":"texto principal 60-120 palabras","features":[{"title":"...","description":"..."}],"cta_text":"texto botón","cta_url":"#contacto"}');
-    if (res.src === 'plantillas' || !res.data) { log('⚠️ La IA no respondió; prueba de nuevo.'); alert('⚠️ La IA no respondió. Comprueba la conexión o inténtalo de nuevo.'); return; }
+    if (res.src === 'plantillas' || !res.data) { log('⚠️ La IA no respondió.'); alert('⚠️ La IA no respondió. Comprueba la conexión o inténtalo de nuevo.'); return; }
     const d = res.data;
     const blocks = [];
     blocks.push({ id: 'blk-h-' + Date.now().toString(36), type: 'hero', data: { title: d.hero_title || d.title || 'Nueva página', subtitle: d.hero_sub || '', cta_text: d.cta_text || 'Contactar', cta_url: d.cta_url || '#contacto' } });
@@ -345,6 +362,7 @@ window.createPageWithAI = function(btn) {
     showToast('✅ Página creada en Borrador');
     document.getElementById('aiPagePrompt').value = '';
     loadPagesList();
+    switchTab('pages');
   });
 };
 
@@ -352,7 +370,9 @@ window.createPageWithAI = function(btn) {
 async function loadPagesList() {
   const { data, error } = await supabase.from('pages').select('*').order('updated_at', { ascending: false });
   const box = document.getElementById('pageList');
+  const counter = document.getElementById('tab-pages-count');
   if (error) { box.innerHTML = '<p style="color:#ef4444;padding:12px;">❌ ' + error.message + '</p>'; return; }
+  if (counter) counter.textContent = (data || []).length;
   if (!data || data.length === 0) { box.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:20px;">No hay páginas todavía. Crea una con ✨ en la sección 1.</p>'; return; }
   box.innerHTML = data.map(p => `
     <div class="page-item">
@@ -451,6 +471,8 @@ window.savePageEdit = function(btn) {
 // ===== PRODUCTOS =====
 function renderProducts() {
   const list = document.getElementById('productList');
+  const counter = document.getElementById('tab-products-count');
+  if (counter) counter.textContent = PRODUCTS.length;
   if (PRODUCTS.length === 0) { list.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:20px;">No hay productos en el CRM.</p>'; return; }
   list.innerHTML = PRODUCTS.map(p => `
     <div class="product-item">
@@ -559,6 +581,7 @@ window.generatePages = function(btn) {
     }
     log('\n🎉 Terminado: ' + ok + ' creadas/actualizadas · ' + ko + ' errores');
     loadPagesList();
+    switchTab('pages');
   });
 };
 window.previewOne = async function() {
@@ -720,7 +743,7 @@ document.getElementById('lib-upload')?.addEventListener('change', async (e) => {
   e.target.value = '';
   showToast('✅ ' + files.length + ' imagen(es) subida(s)');
 });
-window.libUse = function(url) { document.getElementById('tplImage').value = url; closeLib(); showToast('✅ Imagen asignada a la plantilla'); };
+window.libUse = function(url) { document.getElementById('tplImage').value = url; closeLib(); switchTab('template'); showToast('✅ Imagen asignada a la plantilla'); };
 window.libCopy = function(url) { navigator.clipboard.writeText(url); showToast('📋 URL copiada'); };
 window.libDel = async function(name) {
   if (!confirm('¿Eliminar esta imagen?')) return;
@@ -736,9 +759,7 @@ document.querySelectorAll('.card > h2').forEach(h => {
   const card = h.parentElement;
   const tog = document.createElement('span');
   tog.className = 'tog';
-  const startCollapsed = card.dataset.collapsed === '1';
-  tog.textContent = startCollapsed ? '▶' : '▼';
-  if (startCollapsed) card.classList.add('collapsed');
+  tog.textContent = '▼';
   h.appendChild(tog);
   h.addEventListener('click', () => {
     const collapsed = card.classList.toggle('collapsed');
