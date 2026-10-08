@@ -173,8 +173,8 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: #3b82f6
 
 </div>
 
-  <div class="modal-overlay" id="lib-modal" style="display:none;">
-  <div class="modal" style="max-width:900px;max-height:90vh;overflow-y:auto;">
+<div id="lib-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;align-items:center;justify-content:center;padding:20px;overflow-y:auto;">
+  <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;max-width:900px;width:100%;max-height:90vh;overflow-y:auto;padding:20px;position:relative;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
       <h3>📚 Biblioteca de imágenes</h3>
       <button class="btn btn-alt" onclick="closeLib()" style="padding:6px 12px;">✕ Cerrar</button>
