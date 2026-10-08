@@ -6,78 +6,47 @@
 <title>Generador de Páginas — MiCRM</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --bg: #0f172a;
-  --bg-card: #1e293b;
-  --bg-input: #0f172a;
-  --border: #334155;
-  --text: #e2e8f0;
-  --text-muted: #94a3b8;
-  --text-label: #cbd5e1;
-  --accent: #3b82f6;
-  --accent-2: #8b5cf6;
-}
-body.light {
-  --bg: #f1f5f9;
-  --bg-card: #ffffff;
-  --bg-input: #ffffff;
-  --border: #e2e8f0;
-  --text: #0f172a;
-  --text-muted: #64748b;
-  --text-label: #334155;
-  --accent: #2563eb;
-  --accent-2: #7c3aed;
-}
-body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 20px; transition: background .3s, color .3s; }
-#theme-toggle {
-  position: fixed; top: 20px; right: 20px; z-index: 99;
-  background: var(--bg-card); border: 1px solid var(--border);
-  width: 44px; height: 44px; border-radius: 50%;
-  font-size: 20px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 4px 12px rgba(0,0,0,.15);
-  transition: transform .2s;
-}
-#theme-toggle:hover { transform: scale(1.1); }
-.container { max-width: 1200px; margin: 0 auto; }
-.header { background: linear-gradient(135deg, #3b82f6, #8b5cf6); border-radius: 14px; padding: 20px 24px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
-.header h1 { font-size: 22px; color: #fff; }
-.header a { color: #fff; text-decoration: none; font-size: 14px; background: rgba(255,255,255,.15); padding: 8px 14px; border-radius: 8px; }
-.header a:hover { background: rgba(255,255,255,.25); }
-.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-bottom: 20px; transition: background .3s, border .3s; }
-.card h2 { font-size: 16px; color: var(--accent); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
-.card h2::before { content: ''; width: 4px; height: 20px; background: var(--accent); border-radius: 2px; }
-.card h2 .tog { margin-left: auto; font-size: 13px; color: var(--text-muted); }
-.card.collapsed > *:not(h2) { display: none; }
-.row { display: flex; flex-direction: column; gap: 20px; }
-label { display: block; font-size: 13px; font-weight: 600; color: var(--text-label); margin-bottom: 6px; }
-input[type="text"], textarea, select {
-  width: 100%; padding: 10px 12px; background: var(--bg-input); color: var(--text);
-  border: 1.5px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 14px; margin-bottom: 10px;
-  transition: background .3s, color .3s, border .3s;
-}
-textarea { min-height: 90px; resize: vertical; }
-input:focus, textarea:focus, select:focus { outline: none; border-color: #3b82f6; }
-.btn { background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: #fff; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; }
-.btn:hover { opacity: .9; }
-.btn-alt { background: #334155; }
-.btn-ai { background: linear-gradient(135deg, #8b5cf6, #ec4899); }
-.badge { display: inline-block; padding: 3px 10px; background: #1e3a8a; color: #93c5fd; border-radius: 50px; font-size: 12px; font-weight: 600; margin-right: 6px; }
-.vars { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-.vars span { background: #0f172a; border: 1px solid #334155; padding: 4px 10px; border-radius: 50px; font-size: 12px; color: #93c5fd; cursor: pointer; font-family: monospace; }
-.vars span:hover { background: #1e3a8a; }
-.product-list { max-height: 400px; overflow-y: auto; border: 1px solid #334155; border-radius: 10px; padding: 8px; }
-.product-item { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 6px; background: var(--bg-input); margin-bottom: 6px; font-size: 14px; }
-.product-item input { width: auto; margin: 0; }
-.product-item img { width: 40px; height: 40px; object-fit: cover; border-radius: 6px; background: #334155; }
-.product-item .name { flex: 1; font-weight: 600; }
-.product-item .meta { font-size: 12px; color: #94a3b8; }
-#status { margin-top: 10px; font-size: 13px; color: var(--text-muted); padding: 10px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; min-height: 40px; white-space: pre-wrap; font-family: monospace; }
+:root { --bg:#0f172a; --bg-card:#1e293b; --bg-input:#0f172a; --border:#334155; --text:#e2e8f0; --text-muted:#94a3b8; --text-label:#cbd5e1; --accent:#3b82f6; --accent-2:#8b5cf6; }
+body.light { --bg:#f1f5f9; --bg-card:#ffffff; --bg-input:#ffffff; --border:#e2e8f0; --text:#0f172a; --text-muted:#64748b; --text-label:#334155; --accent:#2563eb; --accent-2:#7c3aed; }
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; padding:20px; transition:background .3s,color .3s; }
+#theme-toggle { position:fixed; top:20px; right:20px; z-index:99; background:var(--bg-card); border:1px solid var(--border); width:44px; height:44px; border-radius:50%; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(0,0,0,.15); transition:transform .2s; }
+#theme-toggle:hover { transform:scale(1.1); }
+.container { max-width:1200px; margin:0 auto; }
+.header { background:linear-gradient(135deg,#3b82f6,#8b5cf6); border-radius:14px; padding:20px 24px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; }
+.header h1 { font-size:22px; color:#fff; }
+.header a { color:#fff; text-decoration:none; font-size:14px; background:rgba(255,255,255,.15); padding:8px 14px; border-radius:8px; }
+.header a:hover { background:rgba(255,255,255,.25); }
+.card { background:var(--bg-card); border:1px solid var(--border); border-radius:14px; padding:20px; margin-bottom:20px; transition:background .3s,border .3s; }
+.card h2 { font-size:16px; color:var(--text); margin-bottom:12px; display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none; }
+.card h2::before { content:''; width:4px; height:20px; background:var(--accent); border-radius:2px; }
+.card h2 .tog { margin-left:auto; font-size:13px; color:var(--text-muted); }
+.card.collapsed > *:not(h2) { display:none; }
+.row { display:flex; flex-direction:column; gap:20px; }
+label { display:block; font-size:13px; font-weight:600; color:var(--text-label); margin-bottom:6px; }
+input[type="text"], textarea, select { width:100%; padding:10px 12px; background:var(--bg-input); color:var(--text); border:1.5px solid var(--border); border-radius:8px; font-family:inherit; font-size:14px; margin-bottom:10px; transition:background .3s,color .3s,border .3s; }
+textarea { min-height:90px; resize:vertical; }
+input:focus, textarea:focus, select:focus { outline:none; border-color:var(--accent); }
+.btn { background:linear-gradient(135deg,#3b82f6,#8b5cf6); color:#fff; border:none; padding:10px 18px; border-radius:8px; font-weight:600; cursor:pointer; font-size:14px; }
+.btn:hover { opacity:.9; }
+.btn:disabled { opacity:.5; cursor:not-allowed; }
+.btn-alt { background:var(--border); color:var(--text); }
+.btn-ai { background:linear-gradient(135deg,#8b5cf6,#ec4899); }
+.badge { display:inline-block; padding:3px 10px; background:var(--bg-input); border:1px solid var(--border); color:var(--text-muted); border-radius:50px; font-size:12px; font-weight:600; margin-right:6px; }
+.vars { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+.vars span { background:var(--bg-input); border:1px solid var(--border); padding:4px 10px; border-radius:50px; font-size:12px; color:var(--text-muted); cursor:pointer; font-family:monospace; }
+.vars span:hover { background:var(--border); }
+.product-list { max-height:400px; overflow-y:auto; border:1px solid var(--border); border-radius:10px; padding:8px; }
+.product-item { display:flex; align-items:center; gap:10px; padding:8px; border-radius:6px; background:var(--bg-input); margin-bottom:6px; font-size:14px; }
+.product-item input { width:auto; margin:0; }
+.product-item img { width:40px; height:40px; object-fit:cover; border-radius:6px; background:var(--border); }
+.product-item .name { flex:1; font-weight:600; }
+.product-item .meta { font-size:12px; color:var(--text-muted); }
+#status { margin-top:10px; font-size:13px; color:var(--text-muted); padding:10px; background:var(--bg-input); border:1px solid var(--border); border-radius:8px; min-height:40px; white-space:pre-wrap; font-family:monospace; }
 </style>
 </head>
 <body>
-  <button id="theme-toggle" title="Cambiar tema">🌙</button>
+<button id="theme-toggle" title="Cambiar tema">🌙</button>
 <div class="container">
 
   <div class="header">
@@ -89,48 +58,40 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: #3b82f6
   </div>
 
   <div class="row">
-
     <div class="card">
-      <h2>📦 Productos disponibles</h2>
-      <p style="font-size:13px;color:#94a3b8;margin-bottom:10px;">Selecciona los productos que quieres convertir en páginas.</p>
-      <div style="display:flex;gap:8px;margin-bottom:10px;">
+      <h2>📦 1. Productos disponibles</h2>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">Selecciona los productos que quieres convertir en páginas.</p>
+      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
         <button class="btn btn-alt" onclick="markAll(true)">Seleccionar todos</button>
         <button class="btn btn-alt" onclick="markAll(false)">Quitar todos</button>
         <span id="selCount" class="badge">0 seleccionados</span>
       </div>
       <div class="product-list" id="productList">
-        <p style="text-align:center;color:#64748b;padding:20px;">Cargando productos desde el CRM...</p>
+        <p style="text-align:center;color:var(--text-muted);padding:20px;">Cargando productos desde el CRM...</p>
       </div>
     </div>
 
     <div class="card">
-      <h2>✏️ Plantilla por página</h2>
+      <h2>✏️ 2. Plantilla por página</h2>
       <label>Título de la página</label>
       <input type="text" id="tplTitle" placeholder="{name} — Mi Tienda">
-
       <label>Slug (URL)</label>
       <input type="text" id="tplSlug" placeholder="producto-{sku}">
-
       <label>Bloque Hero — Título</label>
       <input type="text" id="tplHeroTitle" placeholder="{name}">
-
       <label>Bloque Hero — Subtítulo</label>
       <input type="text" id="tplHeroSub" placeholder="{price} € — {category}">
-
       <label>Bloque Texto — Descripción</label>
       <textarea id="tplText" placeholder="{description}&#10;&#10;Disponible en nuestra tienda."></textarea>
-
       <label>Bloque Imagen — URL</label>
       <input type="text" id="tplImage" placeholder="{image_url}">
-
-      <p style="font-size:12px;color:#94a3b8;margin-top:6px;">💡 Haz clic en una variable para insertarla:</p>
+      <p style="font-size:12px;color:var(--text-muted);margin-top:6px;">💡 Haz clic en una variable para insertarla:</p>
       <div class="vars" id="varsList"></div>
     </div>
-
   </div>
 
   <div class="card">
-    <h2>🤖 IA: FreeLLMAPI → Pollinations → Plantillas</h2>
+    <h2>🤖 3. IA: FreeLLMAPI → Pollinations → Plantillas</h2>
     <label>Prompt personalizado (se aplica a todos los productos)</label>
     <textarea id="aiPrompt" placeholder="Ej: Escribe en tono profesional y cercano, destaca la garantía de 2 años y el envío gratis en 24h."></textarea>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
@@ -142,7 +103,7 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: #3b82f6
   </div>
 
   <div class="card">
-    <h2>📚 Biblioteca de imágenes</h2>
+    <h2>📚 4. Biblioteca de imágenes</h2>
     <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">Sube fotos o genera imágenes con IA organizadas por categoría. Asígnalas a las páginas desde el editor.</p>
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
       <button class="btn btn-alt" onclick="openLib()">📚 Abrir biblioteca</button>
@@ -151,24 +112,20 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: #3b82f6
   </div>
 
   <div class="card">
-    <h2>⚡ Generar</h2>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+    <h2>⚡ 5. Generar y herramientas</h2>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
       <button class="btn" onclick="generatePages()">🚀 Generar páginas y guardar en el CRM</button>
-      <button class="btn btn-ai" onclick="previewOne()">👁 Vista previa de la primera</button>
+      <button class="btn btn-ai" onclick="previewOne()">👁 Vista previa</button>
     </div>
-    <div id="status">Esperando acción...</div>
-  </div>
-
-  <div class="card">
-    <h2>🧰 Herramientas</h2>
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
       <button class="btn btn-alt" onclick="analyzeSEO()">🔍 Analizar SEO</button>
-      <button class="btn" onclick="genZip()">📦 Generar ZIP</button>
+      <button class="btn btn-alt" onclick="genZip()">📦 Generar ZIP</button>
       <button class="btn btn-alt" onclick="dlSitemap()">🗺️ sitemap.xml</button>
       <button class="btn btn-alt" onclick="exportBackup()">💾 Exportar backup</button>
       <button class="btn btn-alt" onclick="document.getElementById('impFile').click()">📂 Importar backup</button>
       <input type="file" id="impFile" accept=".json" style="display:none" onchange="importBackup(this.files[0])">
     </div>
+    <div id="status">Esperando acción...</div>
   </div>
 
 </div>
@@ -176,8 +133,8 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: #3b82f6
 <div id="lib-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;align-items:center;justify-content:center;padding:20px;overflow-y:auto;">
   <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;max-width:900px;width:100%;max-height:90vh;overflow-y:auto;padding:20px;position:relative;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-      <h3>📚 Biblioteca de imágenes</h3>
-            <button class="btn btn-alt" onclick="closeLib()" style="padding:6px 12px;position:absolute;top:16px;right:16px;">✕ Cerrar</button>
+      <h3 style="color:var(--text);">📚 Biblioteca de imágenes</h3>
+      <button class="btn btn-alt" onclick="closeLib()" style="padding:6px 12px;position:absolute;top:16px;right:16px;">✕ Cerrar</button>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
       <div>
@@ -187,14 +144,14 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: #3b82f6
           <option value="flux">FLUX (calidad)</option>
           <option value="turbo">Turbo (rápido)</option>
         </select>
-        <button class="btn btn-ai" onclick="libGen()" style="margin-top:8px;"> Generar</button>
+        <button class="btn btn-ai" onclick="libGen(this)" style="margin-top:8px;">🎨 Generar</button>
       </div>
       <div>
         <label>Subir imágenes</label>
         <input type="file" id="lib-upload" accept="image/*" multiple style="margin-top:8px;">
         <label style="margin-top:8px;">Categoría</label>
         <select id="lib-cat">
-          <option value="general"> General</option>
+          <option value="general">📁 General</option>
         </select>
       </div>
     </div>
@@ -203,20 +160,23 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: #3b82f6
     </div>
   </div>
 </div>
+
 <script type="module">
 import { supabase } from './js/supabase-config.js';
 
 let PRODUCTS = [];
 let SELECTED = new Set();
 let ACTIVE_INPUT = null;
+const AI_RESULTS = {};
+let LIB_IMAGES = [];
+let AI_CUSTOM_PROMPT = localStorage.getItem('gen_ai_prompt') || '';
 
-// Variables disponibles
 const VARS = ['{name}','{sku}','{price}','{cost}','{category}','{description}','{image_url}','{stock}'];
 
+// ===== UTILIDADES =====
 function slugify(s) {
   return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
 }
-
 function fill(tpl, p) {
   return (tpl || '')
     .replace(/{name}/g, p.name || '')
@@ -228,12 +188,25 @@ function fill(tpl, p) {
     .replace(/{image_url}/g, p.image_url || '')
     .replace(/{stock}/g, p.stock != null ? String(p.stock) : '');
 }
-
-function renderVars() {
-  const box = document.getElementById('varsList');
-  box.innerHTML = VARS.map(v => `<span onclick="insertVar('${v}')">${v}</span>`).join('');
+function showToast(text) {
+  let wrap = document.getElementById('toast-wrap');
+  if (!wrap) { wrap = document.createElement('div'); wrap.id = 'toast-wrap'; wrap.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:1000;display:flex;flex-direction:column;gap:8px;'; document.body.appendChild(wrap); }
+  const t = document.createElement('div');
+  t.style.cssText = 'background:#111827;color:#fff;padding:10px 14px;border-radius:10px;font-size:13px;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:280px;';
+  t.textContent = text;
+  wrap.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .4s'; setTimeout(() => t.remove(), 400); }, 2500);
+}
+function log(msg) {
+  const st = document.getElementById('status');
+  st.textContent += '\n' + msg;
+  st.scrollTop = st.scrollHeight;
 }
 
+// ===== VARIABLES CLICABLES =====
+function renderVars() {
+  document.getElementById('varsList').innerHTML = VARS.map(v => `<span onclick="insertVar('${v}')">${v}</span>`).join('');
+}
 window.insertVar = function(v) {
   if (!ACTIVE_INPUT) { alert('Haz clic primero en un campo de texto'); return; }
   const el = ACTIVE_INPUT;
@@ -242,22 +215,21 @@ window.insertVar = function(v) {
   el.focus();
   el.selectionStart = el.selectionEnd = start + v.length;
 };
-
-// Registrar input activo
 document.querySelectorAll('input[type="text"], textarea').forEach(el => {
   el.addEventListener('focus', () => { ACTIVE_INPUT = el; });
 });
 
+// ===== PRODUCTOS =====
 function renderProducts() {
   const list = document.getElementById('productList');
   if (PRODUCTS.length === 0) {
-    list.innerHTML = '<p style="text-align:center;color:#64748b;padding:20px;">No hay productos en el CRM todavía.</p>';
+    list.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:20px;">No hay productos en el CRM todavía.</p>';
     return;
   }
   list.innerHTML = PRODUCTS.map(p => `
     <div class="product-item">
       <input type="checkbox" ${SELECTED.has(p.id) ? 'checked' : ''} onchange="toggleSel('${p.id}', this.checked)">
-      ${p.image_url ? `<img src="${p.image_url}">` : '<div style="width:40px;height:40px;background:#334155;border-radius:6px;"></div>'}
+      ${p.image_url ? `<img src="${p.image_url}">` : '<div style="width:40px;height:40px;background:var(--border);border-radius:6px;"></div>'}
       <div class="name">${p.name} ${AI_RESULTS[p.id] ? '<span class="badge" style="background:#4c1d95;color:#e9d5ff;">✨ IA</span>' : ''}</div>
       <div class="meta">
         ${p.sku ? `<span class="badge">${p.sku}</span>` : ''}
@@ -269,104 +241,18 @@ function renderProducts() {
   `).join('');
   updateCount();
 }
-
 window.toggleSel = function(id, on) {
   if (on) SELECTED.add(id); else SELECTED.delete(id);
   updateCount();
 };
-
 window.markAll = function(on) {
   if (on) PRODUCTS.forEach(p => SELECTED.add(p.id));
   else SELECTED.clear();
   renderProducts();
 };
-
 function updateCount() {
   document.getElementById('selCount').textContent = SELECTED.size + ' seleccionados';
 }
-
-function log(msg) {
-  const st = document.getElementById('status');
-  st.textContent += '\n' + msg;
-  st.scrollTop = st.scrollHeight;
-}
-
-window.previewOne = async function() {
-  if (SELECTED.size === 0) { alert('Selecciona al menos un producto.'); return; }
-  const firstId = [...SELECTED][0];
-  const p = PRODUCTS.find(x => x.id === firstId);
-  if (!p) return;
-  const title = fill(document.getElementById('tplTitle').value, p) || p.name;
-  const w = window.open('', '_blank');
-  w.document.write(`
-    <html><head><title>${title}</title>
-    <style>body{font-family:system-ui;max-width:800px;margin:40px auto;padding:20px;color:#111}
-    .hero{background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;padding:60px 20px;border-radius:16px;text-align:center;margin-bottom:30px}
-    .hero h1{font-size:32px;margin-bottom:10px}
-    img{max-width:100%;border-radius:12px;margin:20px 0}
-    </style></head><body>
-    <div class="hero">
-      <h1>${fill(document.getElementById('tplHeroTitle').value, p) || p.name}</h1>
-      <p>${fill(document.getElementById('tplHeroSub').value, p)}</p>
-    </div>
-    ${fill(document.getElementById('tplImage').value, p) ? `<img src="${fill(document.getElementById('tplImage').value, p)}">` : ''}
-    <div>${(fill(document.getElementById('tplText').value, p) || '').replace(/\n/g, '<br>')}</div>
-    </body></html>
-  `);
-  w.document.close();
-};
-
-window.generatePages = async function() {
-  if (SELECTED.size === 0) { alert('Selecciona al menos un producto.'); return; }
-  document.getElementById('status').textContent = '';
-  const toGen = PRODUCTS.filter(p => SELECTED.has(p.id));
-  log(`🚀 Generando ${toGen.length} página(s)...`);
-
-  let ok = 0, ko = 0;
-  for (const p of toGen) {
-    const ai = AI_RESULTS[p.id] ? AI_RESULTS[p.id].data : null;
-    const title = (ai && ai.title) || fill(document.getElementById('tplTitle').value, p) || p.name;
-    const slug = slugify(fill(document.getElementById('tplSlug').value, p) || p.name + '-' + (p.sku || p.id.slice(0, 8)));
-    const heroTitle = (ai && ai.hero_title) || fill(document.getElementById('tplHeroTitle').value, p) || p.name;
-    const heroSub = (ai && ai.hero_sub) || fill(document.getElementById('tplHeroSub').value, p);
-    const text = (ai && ai.text) || fill(document.getElementById('tplText').value, p) || p.description || '';
-    const features = (ai && ai.features && Array.isArray(ai.features)) ? ai.features : [];
-    const ctaText = (ai && ai.cta_text) || 'Comprar ahora';
-    const ctaUrl = (ai && ai.cta_url) || '#comprar';
-
-    const blocks = [];
-    blocks.push({ id: 'blk-hero-' + p.id.slice(0,8), type: 'hero', data: { title: heroTitle, subtitle: heroSub, cta_text: ctaText, cta_url: ctaUrl } });
-    if (imageUrl) blocks.push({ id: 'blk-img-' + p.id.slice(0,8), type: 'image', data: { url: imageUrl, alt: p.name, caption: p.name } });
-    if (text) blocks.push({ id: 'blk-txt-' + p.id.slice(0,8), type: 'text', data: { content: text } });
-    if (features.length > 0) blocks.push({ id: 'blk-feat-' + p.id.slice(0,8), type: 'features', data: { title: 'Características de ' + p.name, items: features } });
-    blocks.push({ id: 'blk-cta-' + p.id.slice(0,8), type: 'hero', data: { title: '¿Listo para ' + p.name + '?', subtitle: ctaText, cta_text: ctaText, cta_url: ctaUrl } });
-
-    const row = {
-      title: title,
-      slug: slug,
-      status: 'draft',
-      content: { blocks: blocks },
-      featured_image: imageUrl || null
-    };
-
-    try {
-      // Upsert: si el slug ya existe, lo actualiza; si no, lo crea
-      const { error } = await supabase.from('pages').upsert([row], { onConflict: 'slug' });
-      if (error) {
-        log(`❌ ${title}: ${error.message}`);
-        ko++;
-      } else {
-        log(`✅ ${title}  →  /${slug}`);
-        ok++;
-      }
-    } catch (e) {
-      log(`❌ ${title}: ${e.message}`);
-      ko++;
-    }
-  }
-  log(`\n🎉 Terminado: ${ok} creadas/actualizadas · ${ko} errores`);
-};
-
 async function loadProducts() {
   const { data, error } = await supabase.from('products').select('*').eq('active', true).order('name');
   if (error) {
@@ -379,36 +265,20 @@ async function loadProducts() {
   renderProducts();
 }
 
-// ===== MODO OSCURO / CLARO =====
-const themeBtn = document.getElementById('theme-toggle');
-const savedTheme = localStorage.getItem('gen_theme');
-if (savedTheme === 'light') {
-  document.body.classList.add('light');
-  themeBtn.textContent = '☀️';
-}
-themeBtn.addEventListener('click', () => {
-  const isLight = document.body.classList.toggle('light');
-  themeBtn.textContent = isLight ? '☀️' : '🌙';
-  localStorage.setItem('gen_theme', isLight ? 'light' : 'dark');
-});
-// ===== IA: CASCADA FreeLLMAPI → Pollinations → Plantillas =====
-let AI_CUSTOM_PROMPT = localStorage.getItem('gen_ai_prompt') || '';
+// ===== IA: CASCADA =====
 const aiPromptBox = document.getElementById('aiPrompt');
 if (AI_CUSTOM_PROMPT) aiPromptBox.value = AI_CUSTOM_PROMPT;
 aiPromptBox.addEventListener('input', (e) => {
   AI_CUSTOM_PROMPT = e.target.value;
   localStorage.setItem('gen_ai_prompt', AI_CUSTOM_PROMPT);
 });
-
 function cleanJSON(t) {
   t = (t || '').replace(/```json/g, '').replace(/```/g, '').trim();
   const a = t.indexOf('{'), b = t.lastIndexOf('}');
   if (a < 0 || b <= a) return null;
   try { return JSON.parse(t.slice(a, b + 1)); } catch (e) { return null; }
 }
-
 async function callAI(prompt) {
-  // 1) FreeLLMAPI (config guardada en settings del CRM)
   try {
     const { data: cfg } = await supabase.from('settings').select('ai_base_url, ai_api_key, ai_model').eq('id', 1).single();
     if (cfg && cfg.ai_base_url) {
@@ -431,49 +301,37 @@ async function callAI(prompt) {
         if (parsed) return { src: 'FreeLLMAPI', data: parsed };
       }
     }
-  } catch (e) { /* pasa al siguiente proveedor */ }
-  // 2) Pollinations (gratis, sin clave)
+  } catch (e) {}
   try {
     const r = await fetch('https://text.pollinations.ai/' + encodeURIComponent(prompt));
     if (r.ok) {
       const parsed = cleanJSON(await r.text());
       if (parsed) return { src: 'Pollinations', data: parsed };
     }
-  } catch (e) { /* pasa al siguiente */ }
-  // 3) Plantillas automáticas
+  } catch (e) {}
   return { src: 'plantillas', data: null };
 }
-
-window.testAI = async function () {
+window.testAI = async function() {
   const st = document.getElementById('ai-status');
   st.textContent = '⏳ Probando...';
   const res = await callAI('Responde solo con este JSON: {"ok": true, "mensaje": "conectado"}');
   st.textContent = (res.src === 'plantillas') ? '⚠️ Sin IA: se usarán plantillas' : '✅ IA conectada vía ' + res.src;
 };
-
-  // ===== IA POR PRODUCTO =====
-const AI_RESULTS = {};
-
 function aiPromptFor(p) {
   const extra = AI_CUSTOM_PROMPT ? '\nInstrucciones extra: ' + AI_CUSTOM_PROMPT : '';
   return 'Eres un experto en marketing y SEO para tiendas online. Producto: "' + (p.name || '') + '". Categoría: ' + (p.category || 'general') + '. Precio: ' + (p.price != null ? p.price : '—') + ' €. Descripción base: ' + (p.description || 'sin descripción') + '.' + extra + '\nDevuelve ÚNICAMENTE este JSON válido (sin markdown, sin texto extra):\n{"title":"título SEO máx 60 car.","hero_title":"titular atractivo máx 70","hero_sub":"subtítulo persuasivo máx 90","text":"descripción comercial 60-90 palabras","features":[{"title":"Característica 1","description":"detalle corto"},{"title":"Característica 2","description":"detalle corto"},{"title":"Característica 3","description":"detalle corto"}],"cta_text":"texto del botón (ej: Comprar ahora)","cta_url":"#comprar"}';
 }
-
-window.aiForProduct = async function (id) {
+window.aiForProduct = async function(id) {
   const p = PRODUCTS.find(x => x.id === id);
   if (!p) return;
   log('✨ IA generando para: ' + p.name + '...');
   const res = await callAI(aiPromptFor(p));
-  if (res.src === 'plantillas' || !res.data) {
-    log('⚠️ Sin IA para ' + p.name + ' (se usará plantilla).');
-    return;
-  }
+  if (res.src === 'plantillas' || !res.data) { log('⚠️ Sin IA para ' + p.name + ' (se usará plantilla).'); return; }
   AI_RESULTS[id] = { data: res.data, src: res.src };
   log('✅ IA (' + res.src + ') lista para: ' + p.name);
   renderProducts();
 };
-
-window.aiForAllSelected = async function () {
+window.aiForAllSelected = async function() {
   const list = PRODUCTS.filter(p => SELECTED.has(p.id));
   if (list.length === 0) { alert('Selecciona al menos un producto.'); return; }
   document.getElementById('status').textContent = '';
@@ -487,7 +345,7 @@ window.aiForAllSelected = async function () {
   renderProducts();
 };
 
-// ===== HERRAMIENTAS: SEO, SITEMAP, BACKUP =====
+// ===== HERRAMIENTAS =====
 function finalTextsFor(p) {
   const ai = AI_RESULTS[p.id] ? AI_RESULTS[p.id].data : null;
   return {
@@ -498,12 +356,10 @@ function finalTextsFor(p) {
     image: fill(document.getElementById('tplImage').value, p) || p.image_url || ''
   };
 }
-
 function slugFor(p) {
   return slugify(fill(document.getElementById('tplSlug').value, p) || p.name + '-' + (p.sku || p.id.slice(0, 8)));
 }
-
-window.analyzeSEO = function () {
+window.analyzeSEO = function() {
   const list = PRODUCTS.filter(p => SELECTED.has(p.id));
   if (list.length === 0) { alert('Selecciona al menos un producto.'); return; }
   let crit = 0, warn = 0, info = 0;
@@ -517,22 +373,17 @@ window.analyzeSEO = function () {
     if (!t.text || t.text.length < 100) { lines.push('⚠️ ' + pre + 'Descripción corta (' + (t.text || '').length + ' car., mín 100)'); warn++; }
     if (!t.image) { lines.push('ℹ️ ' + pre + 'Sin imagen'); info++; }
   });
-  const report = '📊 ANÁLISIS SEO — ' + list.length + ' páginas\n' +
-    (lines.length ? lines.join('\n') : '✅ Sin problemas detectados') +
-    '\n\nResumen: ' + crit + ' críticos · ' + warn + ' avisos · ' + info + ' info';
+  const report = '📊 ANÁLISIS SEO — ' + list.length + ' páginas\n' + (lines.length ? lines.join('\n') : '✅ Sin problemas detectados') + '\n\nResumen: ' + crit + ' críticos · ' + warn + ' avisos · ' + info + ' info';
   alert(report);
   log('📊 SEO: ' + crit + ' críticos, ' + warn + ' avisos, ' + info + ' info');
 };
-
-window.dlSitemap = function () {
+window.dlSitemap = function() {
   const list = PRODUCTS.filter(p => SELECTED.has(p.id));
   if (list.length === 0) { alert('Selecciona al menos un producto.'); return; }
   const base = location.origin + location.pathname.replace('generador.html', '');
   const d = new Date().toISOString().slice(0, 10);
   let x = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
-  list.forEach(p => {
-    x += '<url><loc>' + base + 'pagina.html?slug=' + slugFor(p) + '</loc><lastmod>' + d + '</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>\n';
-  });
+  list.forEach(p => { x += '<url><loc>' + base + 'pagina.html?slug=' + slugFor(p) + '</loc><lastmod>' + d + '</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>\n'; });
   x += '</urlset>';
   const b = new Blob([x], { type: 'application/xml' });
   const a = document.createElement('a');
@@ -541,8 +392,7 @@ window.dlSitemap = function () {
   a.click();
   log('🗺️ sitemap.xml descargado con ' + list.length + ' URLs');
 };
-
-window.exportBackup = function () {
+window.exportBackup = function() {
   const backup = {
     exported_at: new Date().toISOString(),
     selected: [...SELECTED],
@@ -564,11 +414,10 @@ window.exportBackup = function () {
   a.click();
   log('💾 Backup exportado');
 };
-
-window.importBackup = function (f) {
+window.importBackup = function(f) {
   if (!f) return;
   const r = new FileReader();
-  r.onload = function () {
+  r.onload = function() {
     try {
       const o = JSON.parse(r.result);
       if (o.selected) SELECTED = new Set(o.selected);
@@ -593,7 +442,7 @@ window.importBackup = function (f) {
   r.readAsText(f);
 };
 
-  // ===== ZIP: PÁGINAS HTML AUTÓNOMAS =====
+// ===== ZIP =====
 function pageHTML(p) {
   const t = finalTextsFor(p);
   const esc = (s) => (s == null ? '' : String(s)).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -633,16 +482,13 @@ footer{border-top:1px solid #e5e7eb;padding:20px;text-align:center;color:#6b7280
 </body>
 </html>`;
 }
-
-window.genZip = async function () {
+window.genZip = async function() {
   if (typeof JSZip === 'undefined') { alert('❌ JSZip no está cargado. Revisa la conexión a internet.'); return; }
   const list = PRODUCTS.filter(p => SELECTED.has(p.id));
   if (list.length === 0) { alert('Selecciona al menos un producto.'); return; }
   log('📦 Generando ZIP con ' + list.length + ' página(s)...');
   const zip = new JSZip();
-  list.forEach(p => {
-    zip.file(slugFor(p) + '.html', pageHTML(p));
-  });
+  list.forEach(p => { zip.file(slugFor(p) + '.html', pageHTML(p)); });
   const d = new Date().toISOString().slice(0, 10);
   let x = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
   list.forEach(p => { x += '<url><loc>./' + slugFor(p) + '.html</loc><lastmod>' + d + '</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>\n'; });
@@ -656,54 +502,87 @@ window.genZip = async function () {
   log('✅ ZIP descargado: ' + list.length + ' páginas + sitemap.xml');
 };
 
-  // ===== SECCIONES PLEGABLES =====
-document.querySelectorAll('.card > h2').forEach(h => {
-  const card = h.parentElement;
-  const tog = document.createElement('span');
-  tog.className = 'tog';
-  tog.textContent = '▼';
-  h.appendChild(tog);
-  h.addEventListener('click', () => {
-    const collapsed = card.classList.toggle('collapsed');
-    tog.textContent = collapsed ? '▶' : '▼';
-  });
-});
+// ===== GENERAR Y VISTA PREVIA =====
+window.previewOne = async function() {
+  if (SELECTED.size === 0) { alert('Selecciona al menos un producto.'); return; }
+  const firstId = [...SELECTED][0];
+  const p = PRODUCTS.find(x => x.id === firstId);
+  if (!p) return;
+  const t = finalTextsFor(p);
+  const w = window.open('', '_blank');
+  w.document.write(`
+    <html><head><title>${t.title}</title>
+    <style>body{font-family:system-ui;max-width:800px;margin:40px auto;padding:20px;color:#111}
+    .hero{background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;padding:60px 20px;border-radius:16px;text-align:center;margin-bottom:30px}
+    .hero h1{font-size:32px;margin-bottom:10px}
+    img{max-width:100%;border-radius:12px;margin:20px 0}
+    </style></head><body>
+    <div class="hero">
+      <h1>${t.heroTitle}</h1>
+      <p>${t.heroSub}</p>
+    </div>
+    ${t.image ? `<img src="${t.image}">` : ''}
+    <div>${(t.text || '').replace(/\n/g, '<br>')}</div>
+    </body></html>
+  `);
+  w.document.close();
+};
+window.generatePages = async function() {
+  if (SELECTED.size === 0) { alert('Selecciona al menos un producto.'); return; }
+  document.getElementById('status').textContent = '';
+  const toGen = PRODUCTS.filter(p => SELECTED.has(p.id));
+  log('🚀 Generando ' + toGen.length + ' página(s)...');
+  let ok = 0, ko = 0;
+  for (const p of toGen) {
+    const ai = AI_RESULTS[p.id] ? AI_RESULTS[p.id].data : null;
+    const title = (ai && ai.title) || fill(document.getElementById('tplTitle').value, p) || p.name;
+    const slug = slugFor(p);
+    const heroTitle = (ai && ai.hero_title) || fill(document.getElementById('tplHeroTitle').value, p) || p.name;
+    const heroSub = (ai && ai.hero_sub) || fill(document.getElementById('tplHeroSub').value, p);
+    const text = (ai && ai.text) || fill(document.getElementById('tplText').value, p) || p.description || '';
+    const imageUrl = fill(document.getElementById('tplImage').value, p) || p.image_url || '';
+    const features = (ai && ai.features && Array.isArray(ai.features)) ? ai.features : [];
+    const ctaText = (ai && ai.cta_text) || 'Comprar ahora';
+    const ctaUrl = (ai && ai.cta_url) || '#comprar';
+    const blocks = [];
+    blocks.push({ id: 'blk-hero-' + p.id.slice(0,8), type: 'hero', data: { title: heroTitle, subtitle: heroSub, cta_text: ctaText, cta_url: ctaUrl } });
+    if (imageUrl) blocks.push({ id: 'blk-img-' + p.id.slice(0,8), type: 'image', data: { url: imageUrl, alt: p.name, caption: p.name } });
+    if (text) blocks.push({ id: 'blk-txt-' + p.id.slice(0,8), type: 'text', data: { content: text } });
+    if (features.length > 0) blocks.push({ id: 'blk-feat-' + p.id.slice(0,8), type: 'features', data: { title: 'Características de ' + p.name, items: features } });
+    blocks.push({ id: 'blk-cta-' + p.id.slice(0,8), type: 'hero', data: { title: '¿Listo para ' + p.name + '?', subtitle: ctaText, cta_text: ctaText, cta_url: ctaUrl } });
+    const row = { title: title, slug: slug, status: 'draft', content: { blocks: blocks }, featured_image: imageUrl || null };
+    try {
+      const { error } = await supabase.from('pages').upsert([row], { onConflict: 'slug' });
+      if (error) { log('❌ ' + title + ': ' + error.message); ko++; }
+      else { log('✅ ' + title + '  →  /' + slug); ok++; }
+    } catch (e) { log('❌ ' + title + ': ' + e.message); ko++; }
+  }
+  log('\n🎉 Terminado: ' + ok + ' creadas/actualizadas · ' + ko + ' errores');
+};
 
-renderVars();
-  // ===== BIBLIOTECA DE IMÁGENES =====
-let LIB_IMAGES = [];
-
+// ===== BIBLIOTECA =====
 async function loadLibImages() {
   const { data, error } = await supabase.storage.from('product-images').list('', { limit: 200 });
-  if (error) {
-    console.error('Error cargando biblioteca:', error);
-    return;
-  }
+  if (error) { console.error('Error cargando biblioteca:', error); return; }
   LIB_IMAGES = data || [];
   const count = document.getElementById('lib-count');
   if (count) count.textContent = LIB_IMAGES.length + ' imágenes';
 }
-
 function getLibUrl(name) {
   const { data } = supabase.storage.from('product-images').getPublicUrl(name);
   return data.publicUrl;
 }
-
 window.openLib = async function() {
   document.getElementById('lib-modal').style.display = 'flex';
   await loadLibImages();
   renderLib();
-  // Cargar categorías desde productos
   const cats = [...new Set(PRODUCTS.map(p => p.category).filter(Boolean))];
   const sel = document.getElementById('lib-cat');
-  sel.innerHTML = '<option value="general">📁 General</option>' + 
-    cats.map(c => `<option value="${c.toLowerCase().replace(/[^a-z0-9]/g,'-')}">${c}</option>`).join('');
+  sel.innerHTML = '<option value="general">📁 General</option>' + cats.map(c => `<option value="${c.toLowerCase().replace(/[^a-z0-9]/g,'-')}">${c}</option>`).join('');
 };
-
 window.closeLib = function() {
   document.getElementById('lib-modal').style.display = 'none';
 };
-
 function renderLib() {
   const grid = document.getElementById('lib-grid');
   if (LIB_IMAGES.length === 0) {
@@ -716,26 +595,24 @@ function renderLib() {
       <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--bg-input);">
         <img src="${url}" loading="lazy" style="width:100%;height:140px;object-fit:cover;">
         <div style="padding:8px;font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${img.name}</div>
-        <div style="display:flex;gap:6px;padding:8px;border-top:1px solid var(--border);">
-          <button class="btn btn-alt" onclick="libUse('${url}')" style="flex:1;font-size:12px;padding:4px;">Usar</button>
-          <button class="btn btn-alt" onclick="libCopy('${url}')" style="font-size:12px;padding:4px;"></button>
-          <button class="btn btn-alt" onclick="libDel('${img.name}')" style="font-size:12px;padding:4px;color:#ef4444;">🗑</button>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:8px;border-top:1px solid var(--border);">
+          <button class="btn" onclick="libUse('${url}')" style="font-size:12px;padding:6px;">⬇️ Usar</button>
+          <button class="btn btn-alt" onclick="libCopy('${url}')" style="font-size:12px;padding:6px;">📋 Copiar</button>
+          <button class="btn btn-alt" onclick="window.open('${url}','_blank')" style="font-size:12px;padding:6px;">🔗 Abrir</button>
+          <button class="btn btn-alt" onclick="libDel('${img.name}')" style="font-size:12px;padding:6px;color:#ef4444;">🗑 Eliminar</button>
         </div>
       </div>
     `;
   }).join('');
 }
-
-window.libGen = async function() {
+window.libGen = async function(btn) {
   const prompt = document.getElementById('lib-prompt').value.trim();
   const model = document.getElementById('lib-model').value;
   if (!prompt) { alert('Escribe un prompt'); return; }
-  const btn = event.target;
   btn.disabled = true;
   btn.textContent = '⏳ Generando...';
   try {
     const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?model=${model}&width=1024&height=640&nologo=true`;
-    // Descargar y subir a Supabase
     const res = await fetch(url);
     const blob = await res.blob();
     const cat = document.getElementById('lib-cat').value;
@@ -745,6 +622,7 @@ window.libGen = async function() {
     await loadLibImages();
     renderLib();
     document.getElementById('lib-prompt').value = '';
+    showToast('✅ Imagen generada y guardada');
   } catch (e) {
     alert('Error: ' + e.message);
   } finally {
@@ -752,7 +630,6 @@ window.libGen = async function() {
     btn.textContent = '🎨 Generar';
   }
 };
-
 document.getElementById('lib-upload')?.addEventListener('change', async (e) => {
   const files = Array.from(e.target.files);
   if (files.length === 0) return;
@@ -764,34 +641,57 @@ document.getElementById('lib-upload')?.addEventListener('change', async (e) => {
   await loadLibImages();
   renderLib();
   e.target.value = '';
+  showToast('✅ ' + files.length + ' imagen(es) subida(s)');
 });
-
 window.libUse = function(url) {
-  // Insertar en el campo activo de plantilla
   const imageInput = document.getElementById('tplImage');
   if (imageInput) {
     imageInput.value = url;
     closeLib();
+    showToast('✅ Imagen asignada al campo "Bloque Imagen — URL"');
   }
 };
-
 window.libCopy = function(url) {
   navigator.clipboard.writeText(url);
-  showToast(' URL copiada');
+  showToast('📋 URL copiada');
 };
-
 window.libDel = async function(name) {
   if (!confirm('¿Eliminar esta imagen?')) return;
   await supabase.storage.from('product-images').remove([name]);
   await loadLibImages();
   renderLib();
 };
-
-// Cerrar modal al hacer clic fuera
 document.getElementById('lib-modal')?.addEventListener('click', (e) => {
   if (e.target.id === 'lib-modal') closeLib();
 });
 
+// ===== SECCIONES PLEGABLES =====
+document.querySelectorAll('.card > h2').forEach(h => {
+  const card = h.parentElement;
+  const tog = document.createElement('span');
+  tog.className = 'tog';
+  tog.textContent = '▼';
+  h.appendChild(tog);
+  h.addEventListener('click', () => {
+    const collapsed = card.classList.toggle('collapsed');
+    tog.textContent = collapsed ? '▶' : '▼';
+  });
+});
+
+// ===== MODO OSCURO / CLARO =====
+const themeBtn = document.getElementById('theme-toggle');
+const savedTheme = localStorage.getItem('gen_theme');
+if (savedTheme === 'light') {
+  document.body.classList.add('light');
+  themeBtn.textContent = '☀️';
+}
+themeBtn.addEventListener('click', () => {
+  const isLight = document.body.classList.toggle('light');
+  themeBtn.textContent = isLight ? '☀️' : '🌙';
+  localStorage.setItem('gen_theme', isLight ? 'light' : 'dark');
+});
+
+renderVars();
 loadProducts();
 </script>
 </body>
